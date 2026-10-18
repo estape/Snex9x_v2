@@ -1,0 +1,93 @@
+{
+  "multitapMode": "auto",
+  "players": [
+    {
+      "buttons": {
+        "A": "KeyX",
+        "B": "KeyZ",
+        "Down": "ArrowDown",
+        "L": "KeyQ",
+        "Left": "ArrowLeft",
+        "R": "KeyW",
+        "Right": "ArrowRight",
+        "Select": "ShiftRight",
+        "Start": "Enter",
+        "Up": "ArrowUp",
+        "X": "KeyS",
+        "Y": "KeyA"
+      },
+      "deadzone": 0.20000000298023224,
+      "deviceId": "keyboard",
+      "deviceName": "Keyboard (Arrows + Z/X/A/S/Q/W)",
+      "deviceType": "keyboard",
+      "playerIndex": 1,
+      "rumbleEnabled": true
+    },
+    {
+      "buttons": {
+        "A": "east",
+        "B": "south",
+        "Down": "dpdown",
+        "L": "leftshoulder",
+        "Left": "dpleft",
+        "R": "rightshoulder",
+        "Right": "dpright",
+        "Select": "back",
+        "Start": "start",
+        "Up": "dpup",
+        "X": "north",
+        "Y": "west"
+      },
+      "deadzone": 0.20000000298023224,
+      "deviceId": "",
+      "deviceName": "Unassigned",
+      "deviceType": "none",
+      "playerIndex": 2,
+      "rumbleEnabled": true
+    },
+    {
+      "buttons": {
+        "A": "east",
+        "B": "south",
+        "Down": "dpdown",
+        "L": "leftshoulder",
+        "Left": "dpleft",
+        "R": "rightshoulder",
+        "Right": "dpright",
+        "Select": "back",
+        "Start": "start",
+        "Up": "dpup",
+        "X": "north",
+        "Y": "west"
+      },
+      "deadzone": 0.20000000298023224,
+      "deviceId": "",
+      "deviceName": "Unassigned",
+      "deviceType": "none",
+      "playerIndex": 3,
+      "rumbleEnabled": true
+    },
+    {
+      "buttons": {
+        "A": "east",
+        "B": "south",
+        "Down": "dpdown",
+        "L": "leftshoulder",
+        "Left": "dpleft",
+        "R": "rightshoulder",
+        "Right": "dpright",
+        "Select": "back",
+        "Start": "start",
+        "Up": "dpup",
+        "X": "north",
+        "Y": "west"
+      },
+      "deadzone": 0.20000000298023224,
+      "deviceId": "",
+      "deviceName": "Unassigned",
+      "deviceType": "none",
+      "playerIndex": 4,
+      "rumbleEnabled": true
+    }
+  ]
+}

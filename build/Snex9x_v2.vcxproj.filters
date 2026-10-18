@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="D:\Rodrigo\Documents\Dev\vscode\Desktop\C++\Snex9x_v2\src\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Rodrigo\Documents\Dev\vscode\Desktop\C++\Snex9x_v2\src\model\ConfigModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Rodrigo\Documents\Dev\vscode\Desktop\C++\Snex9x_v2\src\model\BoxartService.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Rodrigo\Documents\Dev\vscode\Desktop\C++\Snex9x_v2\src\model\GameLibraryModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Rodrigo\Documents\Dev\vscode\Desktop\C++\Snex9x_v2\src\model\EmulatorModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Rodrigo\Documents\Dev\vscode\Desktop\C++\Snex9x_v2\src\controller\InputController.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Rodrigo\Documents\Dev\vscode\Desktop\C++\Snex9x_v2\src\controller\AppController.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\Rodrigo\Documents\Dev\vscode\Desktop\C++\Snex9x_v2\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{3723FBB8-9EAA-3559-9F2B-F1E490862E48}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

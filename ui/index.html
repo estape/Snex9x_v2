@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Snex9x v2 — Super Nintendo Entertainment System</title>
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Categorized Dropdown Menubar -->
+    <header class="top-menubar" role="menubar" aria-label="Emulator Management Menu">
+      <div class="brand-badge">
+        <span class="brand-logo" aria-hidden="true">
+          <svg viewBox="0 0 28 20" width="24" height="18" fill="none">
+            <rect x="1" y="2" width="26" height="16" rx="8" stroke="currentColor" stroke-width="2"/>
+            <circle cx="20" cy="7" r="1.7" fill="#6366f1"/>
+            <circle cx="23" cy="10" r="1.7" fill="#ec4899"/>
+            <circle cx="17" cy="10" r="1.7" fill="#38bdf8"/>
+            <circle cx="20" cy="13" r="1.7" fill="#a855f7"/>
+            <path d="M6 10h5M8.5 7.5v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="brand-title">SNEX9X <small>v2</small></span>
+      </div>
+
+      <nav class="menubar-nav">
+        <!-- FILE MENU -->
+        <div class="menu-category" data-menu="file">
+          <button type="button" class="menu-trigger" aria-haspopup="true" aria-expanded="false">File</button>
+          <div class="menu-dropdown" role="menu">
+            <button type="button" class="menu-item" data-action="open-rom">
+              <span>Open ROM...</span>
+              <kbd>Ctrl+O</kbd>
+            </button>
+            <button type="button" class="menu-item" data-action="scan-folder">
+              <span>Scan ROM Folder...</span>
+              <kbd>Ctrl+Shift+O</kbd>
+            </button>
+            <button type="button" class="menu-item" data-action="open-database">
+              <span>Browse SNES Game Database (4,218)...</span>
+              <kbd>Ctrl+D</kbd>
+            </button>
+            <div class="menu-divider"></div>
+            <button type="button" class="menu-item" data-action="close-rom" id="menu-close-rom" disabled>
+              <span>Close Active ROM</span>
+              <kbd>Ctrl+W</kbd>
+            </button>
+            <div class="menu-divider"></div>
+            <button type="button" class="menu-item menu-item-danger" data-action="exit-app">
+              <span>Exit Snex9x</span>
+              <kbd>Alt+F4</kbd>
+            </button>
+          </div>
+        </div>
+
+        <!-- EMULATION MENU -->
+        <div class="menu-category" data-menu="emulation">
+          <button type="button" class="menu-trigger" aria-haspopup="true" aria-expanded="false">Emulation</button>
+          <div class="menu-dropdown" role="menu">
+            <button type="button" class="menu-item" data-action="toggle-pause" id="menu-pause-resume" disabled>
+              <span id="menu-pause-label">Pause Emulation</span>
+              <kbd>Space</kbd>
+            </button>
+            <button type="button" class="menu-item" data-action="soft-reset" id="menu-soft-reset" disabled>
+              <span>Soft Reset</span>
+              <kbd>Ctrl+R</kbd>
+            </button>
+            <button type="button" class="menu-item" data-action="hard-reset" id="menu-hard-reset" disabled>
+              <span>Hard Reset (Power Cycle)</span>
+              <kbd>Ctrl+Shift+R</kbd>
+            </button>
+            <div class="menu-divider"></div>
+            <div class="menu-group-label">System Region</div>
+            <button type="button" class="menu-item menu-radio" data-setting-emu="region" data-value="auto">
+              <span>Auto-Detect Region</span>
+              <span class="check-indicator">●</span>
+            </button>
+            <button type="button" class="menu-item menu-radio" data-setting-emu="region" data-value="ntsc">
+              <span>Force NTSC (60 Hz)</span>
+              <span class="check-indicator">●</span>
+            </button>
+            <button type="button" class="menu-item menu-radio" data-setting-emu="region" data-value="pal">
+              <span>Force PAL (50 Hz)</span>
+              <span class="check-indicator">●</span>
+            </button>
+            <div class="menu-divider"></div>
+            <div class="menu-group-label">Emulation Speed</div>
+            <button type="button" class="menu-item menu-radio" data-setting-emu="speedMultiplier" data-value="1">
+              <span>1x Normal Speed (100%)</span>
+              <span class="check-indicator">●</span>
+            </button>
+            <button type="button" class="menu-item menu-radio" data-setting-emu="speedMultiplier" data-value="2">
+              <span>2x Fast Forward (200%)</span>
+              <span class="check-indicator">●</span>
+            </button>
+            <button type="button" class="menu-item menu-radio" data-setting-emu="speedMultiplier" data-value="4">
+              <span>4x Turbo Speed (400%)</span>
+              <span class="check-indicator">●</span>
+            </button>
+            <div class="menu-divider"></div>
+            <button type="button" class="menu-item" data-action="open-emulation-settings">
+              <span>Emulation &amp; Audio Settings...</span>
+              <kbd>F9</kbd>
+            </button>
+          </div>
+        </div>
+
+        <!-- STATE MENU -->
+        <div class="menu-category" data-menu="state">
+          <button type="button" class="menu-trigger" aria-haspopup="true" aria-expanded="false">State</button>
+          <div class="menu-dropdown" role="menu">
+            <button type="button" class="menu-item" data-action="quick-save-state">
+              <span>Save State to Active Slot</span>
+              <kbd>F5</kbd>
+            </button>
+            <button type="button" class="menu-item" data-action="quick-load-state">
+              <span>Load State from Active Slot</span>
+              <kbd>F7</kbd>
+            </button>
+            <div class="menu-divider"></div>
+            <div class="menu-group-label">Select State Slot (1–10)</div>
+            <div class="slot-grid" id="menu-slot-grid">
+              <!-- Populated by JS Slots 1..10 -->
+            </div>
+            <div class="menu-divider"></div>
+            <button type="button" class="menu-item" data-action="save-state-file">
+              <span>Save State to File...</span>
+            </button>
+            <button type="button" class="menu-item" data-action="load-state-file">
+              <span>Load State from File...</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- GRAPHICS MENU -->
+        <div class="menu-category" data-menu="graphics">
+          <button type="button" class="menu-trigger" aria-haspopup="true" aria-expanded="false">Graphics</button>
+          <div class="menu-dropdown" role="menu">
+            <div class="menu-group-label">Aspect Ratio</div>
+            <button type="button" class="menu-item menu-radio" data-setting-gfx="aspectRatio" data-value="4:3">
+              <span>4:3 Standard CRT</span>
+              <span class="check-indicator">●</span>
+            </button>
+            <button type="button" class="menu-item menu-radio" data-setting-gfx="aspectRatio" data-value="8:7">
+              <span>8:7 Pixel-Exact (Internal PPU)</span>
+              <span class="check-indicator">●</span>
+            </button>
+            <button type="button" class="menu-item menu-radio" data-setting-gfx="aspectRatio" data-value="stretch">
+              <span>Stretch to Window</span>
+              <span class="check-indicator">●</span>
+            </button>
+            <div class="menu-divider"></div>
+            <button type="button" class="menu-item menu-toggle" data-toggle-gfx="integerScaling">
+              <span>Integer Pixel Scaling</span>
+              <span class="check-indicator">✓</span>
+            </button>
+            <button type="button" class="menu-item menu-toggle" data-toggle-gfx="bilinearFiltering">
+              <span>Bilinear Texture Smoothing</span>
+              <span class="check-indicator">✓</span>
+            </button>
+            <button type="button" class="menu-item menu-toggle" data-toggle-gfx="crtShader">
+              <span>WebGL2 CRT Scanline &amp; Curvature Shader</span>
+              <span class="check-indicator">✓</span>
+            </button>
+            <button type="button" class="menu-item menu-toggle" data-toggle-gfx="showFps">
+              <span>Show FPS &amp; Frame Counter</span>
+              <span class="check-indicator">✓</span>
+            </button>
+            <div class="menu-divider"></div>
+            <div class="menu-group-label">CPU Enhancement Filter</div>
+            <button type="button" class="menu-item menu-radio" data-setting-gfx="cpuFilter" data-value="none">
+              <span>None (Raw PPU Output)</span>
+              <span class="check-indicator">●</span>
+            </button>
+            <button type="button" class="menu-item menu-radio" data-setting-gfx="cpuFilter" data-value="ntsc_composite">
+              <span>Blargg NTSC (Composite)</span>
+              <span class="check-indicator">●</span>
+            </button>
+            <button type="button" class="menu-item menu-radio" data-setting-gfx="cpuFilter" data-value="ntsc_rgb">
+              <span>Blargg NTSC (RGB)</span>
+              <span class="check-indicator">●</span>
+            </button>
+            <button type="button" class="menu-item menu-radio" data-setting-gfx="cpuFilter" data-value="epx">
+              <span>EPX / Scale2x</span>
+              <span class="check-indicator">●</span>
+            </button>
+            <button type="button" class="menu-item menu-radio" data-setting-gfx="cpuFilter" data-value="super2xsai">
+              <span>Super 2xSaI</span>
+              <span class="check-indicator">●</span>
+            </button>
+            <button type="button" class="menu-item menu-radio" data-setting-gfx="cpuFilter" data-value="hq2x">
+              <span>HQ2x Filter</span>
+              <span class="check-indicator">●</span>
+            </button>
+            <button type="button" class="menu-item menu-radio" data-setting-gfx="cpuFilter" data-value="xbrz_2x">
+              <span>xBRZ 2x High-Detail</span>
+              <span class="check-indicator">●</span>
+            </button>
+            <div class="menu-divider"></div>
+            <button type="button" class="menu-item" data-action="toggle-fullscreen">
+              <span>Toggle Fullscreen</span>
+              <kbd>F11</kbd>
+            </button>
+            <button type="button" class="menu-item" data-action="open-graphics-settings">
+              <span>Graphics Settings...</span>
+              <kbd>F10</kbd>
+            </button>
+          </div>
+        </div>
+
+        <!-- CONTROLS MENU -->
+        <div class="menu-category" data-menu="controls">
+          <button type="button" class="menu-trigger" aria-haspopup="true" aria-expanded="false">Controls</button>
+          <div class="menu-dropdown" role="menu">
+            <button type="button" class="menu-item" data-action="open-controls-settings">
+              <span>Configure Controls (Players 1–4)...</span>
+              <kbd>F12</kbd>
+            </button>
+            <div class="menu-divider"></div>
+            <div class="menu-group-label">Super Multitap (4-Player Adapter)</div>
+            <button type="button" class="menu-item menu-radio" data-setting-emu="multitapMode" data-value="auto">
+              <span>Auto (Enable when Player 3/4 Assigned)</span>
+              <span class="check-indicator">●</span>
+            </button>
+            <button type="button" class="menu-item menu-radio" data-setting-emu="multitapMode" data-value="enabled">
+              <span>Force Enabled (4-Player Mode)</span>
+              <span class="check-indicator">●</span>
+            </button>
+            <button type="button" class="menu-item menu-radio" data-setting-emu="multitapMode" data-value="disabled">
+              <span>Disabled (Standard 2-Port Mode)</span>
+              <span class="check-indicator">●</span>
+            </button>
+            <div class="menu-divider"></div>
+            <button type="button" class="menu-item" data-action="refresh-devices">
+              <span>Rescan SDL3 Gamepads</span>
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Right Status / Quick Actions on Menubar -->
+      <div class="menubar-status">
+        <span class="status-pill" id="gamepad-status-pill" title="Connected SDL3 Gamepads">
+          <span class="status-dot"></span>
+          <span id="gamepad-count-label">1 Input Ready</span>
+        </span>
+        <span class="status-pill slot-pill" id="active-slot-pill" title="Active Save State Slot">
+          Slot 1
+        </span>
+        <button type="button" class="menubar-view-btn" id="btn-return-library" hidden>
+          ← Library View
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace Area -->
+    <main class="workspace-container">
+      <!-- SPLIT LIBRARY VIEW (Left: Game List | Right: Cover Art on Top + Game Info Below) -->
+      <section class="library-split-view" id="library-view" aria-label="Game Library">
+        <!-- Left Pane: Searchable Game List -->
+        <aside class="library-left-pane">
+          <div class="library-search-header">
+            <div class="search-input-wrap">
+              <svg class="search-icon" viewBox="0 0 20 20" width="16" height="16" fill="none">
+                <circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="2"/>
+                <path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <input type="search" id="game-search-input" placeholder="Search games, year, or region..." autocomplete="off" />
+            </div>
+            <div class="library-filter-bar" role="tablist" aria-label="Library Filter">
+              <button type="button" class="filter-chip active" data-filter="all">All Games</button>
+              <button type="button" class="filter-chip" data-filter="installed">Ready</button>
+              <button type="button" class="filter-chip" data-filter="favorites">Favorites</button>
+            </div>
+          </div>
+
+          <div class="game-list-scroll" id="game-list-container" role="listbox" aria-label="SNES Games">
+            <!-- Populated dynamically by app.js -->
+          </div>
+
+          <footer class="library-left-footer">
+            <span id="library-count-text">0 games</span>
+            <div class="library-footer-actions">
+              <button type="button" class="btn-ghost-sm" data-action="open-rom">+ Add ROM</button>
+              <button type="button" class="btn-ghost-sm" data-action="scan-folder">Scan Folder</button>
+            </div>
+          </footer>
+        </aside>
+
+        <!-- Right Pane: Boxart Image on Top + Name, Year, Description & Metadata Below -->
+        <section class="library-right-pane" id="game-detail-pane" aria-live="polite">
+          <!-- Top: Named_Boxarts Image Stage -->
+          <div class="detail-boxart-stage">
+            <div class="boxart-ambient-glow" id="boxart-ambient-glow"></div>
+            <div class="boxart-frame">
+              <img id="detail-boxart-img" class="boxart-image" alt="Selected game boxart" hidden />
+              <div id="detail-boxart-placeholder" class="boxart-placeholder generic-snes-box">
+                <div class="generic-box-header">
+                  <div class="snes-logo-strip">
+                    <span class="snes-logo-dot red"></span>
+                    <span class="snes-logo-dot yellow"></span>
+                    <span class="snes-logo-dot blue"></span>
+                    <span class="snes-logo-dot green"></span>
+                    <span class="snes-logo-text">SUPER NINTENDO</span>
+                  </div>
+                  <span class="snes-sub-text">ENTERTAINMENT SYSTEM</span>
+                </div>
+                <div class="generic-box-body">
+                  <div class="generic-box-title" id="placeholder-cart-title">SUPER NINTENDO</div>
+                  <div class="generic-box-badge">16-BIT CARTRIDGE</div>
+                </div>
+                <div class="generic-box-footer">
+                  <span class="generic-box-seal" id="placeholder-status-text">OFFICIAL SEAL OF QUALITY</span>
+                  <span class="generic-box-region" id="placeholder-box-region">SNES</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="boxart-stage-Overlay">
+              <div class="detail-badges-row">
+                <span class="meta-badge badge-region" id="detail-region">USA</span>
+                <span class="meta-badge badge-hardware" id="detail-hardware">Standard</span>
+                <span class="meta-badge badge-status" id="detail-rom-status">Ready to Play</span>
+              </div>
+              <div class="detail-cta-group">
+                <button type="button" class="btn-primary-play" id="btn-play-selected">
+                  <svg viewBox="0 0 20 20" width="18" height="18" fill="currentColor">
+                    <path d="M5 3.868v12.264a1 1 0 001.525.85l9.965-6.132a1 1 0 000-1.7L6.525 3.018A1 1 0 005 3.868z"/>
+                  </svg>
+                  <span id="btn-play-label">Play Now</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom: Game Information (Name, Year, Brief Description, Technical Specs) -->
+          <div class="detail-info-panel">
+            <div class="detail-header-row">
+              <div class="detail-title-group">
+                <h1 class="detail-game-title" id="detail-title">Select a Game</h1>
+                <p class="detail-nointro-subtitle" id="detail-nointro">Super Nintendo Entertainment System</p>
+              </div>
+              <div class="detail-year-pill" id="detail-year">1991</div>
+            </div>
+
+            <div class="detail-description-box">
+              <h2 class="section-eyebrow">Brief Description</h2>
+              <p class="detail-description-text" id="detail-description">
+                Select a game from the list on the left to view its box art, release year, synopsis, and hardware specifications.
+              </p>
+            </div>
+
+            <div class="detail-specs-grid">
+              <div class="spec-card">
+                <span class="spec-label">Developer</span>
+                <span class="spec-value" id="detail-developer">—</span>
+              </div>
+              <div class="spec-card">
+                <span class="spec-label">Publisher</span>
+                <span class="spec-value" id="detail-publisher">—</span>
+              </div>
+              <div class="spec-card">
+                <span class="spec-label">Genre</span>
+                <span class="spec-value" id="detail-genre">—</span>
+              </div>
+              <div class="spec-card">
+                <span class="spec-label">Players</span>
+                <span class="spec-value" id="detail-players">1–4</span>
+              </div>
+              <div class="spec-card">
+                <span class="spec-label">Serial / ID</span>
+                <span class="spec-value mono" id="detail-serial">—</span>
+              </div>
+              <div class="spec-card">
+                <span class="spec-label">CRC32</span>
+                <span class="spec-value mono" id="detail-crc32">—</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <!-- ACTIVE EMULATION VIEWPORT (WebGL2 Canvas) -->
+      <section class="emulator-viewport" id="emulator-view" hidden aria-label="Active SNES Emulation">
+        <div class="canvas-stage" id="canvas-stage">
+          <canvas id="snes-canvas" width="256" height="224"></canvas>
+
+          <!-- Optional HUD / FPS Overlay -->
+          <div class="fps-overlay" id="fps-overlay" hidden>
+            <span id="fps-counter-text">60.0 FPS</span>
+            <span class="hud-sep">|</span>
+            <span id="res-counter-text">256×224</span>
+          </div>
+
+          <!-- Paused Banner -->
+          <div class="paused-overlay" id="paused-overlay" hidden>
+            <div class="paused-card">
+              <h2>EMULATION PAUSED</h2>
+              <p>Press <kbd>Space</kbd> or click Resume to continue playing</p>
+              <div class="paused-actions">
+                <button type="button" class="btn-primary-play" data-action="toggle-pause">Resume Game</button>
+                <button type="button" class="btn-secondary" data-action="quick-save-state">Save State (F5)</button>
+                <button type="button" class="btn-secondary" data-action="close-rom">Close ROM</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ==================================================================== -->
+  <!-- MODAL 1: 4-PLAYER CONTROLS & SUPER MULTITAP CONFIGURATION            -->
+  <!-- ==================================================================== -->
+  <dialog id="dialog-controls" class="modal-dialog modal-lg" closedby="any" aria-labelledby="controls-modal-title">
+    <div class="modal-content">
+      <header class="modal-header">
+        <div>
+          <h2 id="controls-modal-title">Controller Configuration (Up to 4 Players)</h2>
+          <p class="modal-subtitle">Configure Keyboard or SDL3 Gamepads for Ports 1–4 with Super Multitap support</p>
+        </div>
+        <button type="button" class="modal-close-btn" data-close-dialog="dialog-controls" aria-label="Close">✕</button>
+      </header>
+
+      <div class="modal-body">
+        <!-- Player 1..4 Tabs + Multitap Mode -->
+        <div class="controls-top-bar">
+          <div class="player-tabs" role="tablist" aria-label="Select Player">
+            <button type="button" class="player-tab active" data-player-tab="1">Player 1</button>
+            <button type="button" class="player-tab" data-player-tab="2">Player 2</button>
+            <button type="button" class="player-tab" data-player-tab="3">Player 3 <small>MP5</small></button>
+            <button type="button" class="player-tab" data-player-tab="4">Player 4 <small>MP5</small></button>
+          </div>
+
+          <div class="multitap-selector-inline">
+            <label for="controls-multitap-select">Super Multitap:</label>
+            <select id="controls-multitap-select" class="form-select">
+              <option value="auto">Auto (When P3/P4 Active)</option>
+              <option value="enabled">Force Enabled (4P)</option>
+              <option value="disabled">Disabled (2P)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Device Selection & Options for Selected Player -->
+        <div class="player-device-row">
+          <div class="form-group">
+            <label for="player-device-select">Input Device for <span id="active-player-heading">Player 1</span></label>
+            <div class="device-select-group">
+              <select id="player-device-select" class="form-select"></select>
+              <button type="button" class="btn-secondary btn-sm" id="btn-rescan-pads">Rescan SDL3</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="player-deadzone-range">Analog Stick Deadzone: <span id="deadzone-value-label">20%</span></label>
+            <input type="range" id="player-deadzone-range" min="5" max="60" value="20" class="form-range" />
+          </div>
+
+          <div class="form-group rumble-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="player-rumble-checkbox" checked />
+              <span>Enable Haptic Rumble</span>
+            </label>
+            <button type="button" class="btn-secondary btn-sm" id="btn-test-rumble">Test Rumble</button>
+          </div>
+        </div>
+
+        <!-- Visual SNES Controller Diagram + 12-Button Rebind Grid -->
+        <div class="controller-mapping-layout">
+          <div class="snes-pad-visual" aria-hidden="true">
+            <svg viewBox="0 0 420 200" class="snes-pad-svg">
+              <!-- Shoulders L & R -->
+              <rect x="48" y="14" width="90" height="24" rx="10" class="pad-shoulder" data-svg-btn="L"/>
+              <text x="93" y="30" class="pad-svg-text">L</text>
+              <rect x="282" y="14" width="90" height="24" rx="10" class="pad-shoulder" data-svg-btn="R"/>
+              <text x="327" y="30" class="pad-svg-text">R</text>
+              <!-- Main Body -->
+              <path d="M95 28 H325 A75 75 0 0 1 400 103 A75 75 0 0 1 325 178 C290 178 272 150 245 150 H175 C148 150 130 178 95 178 A75 75 0 0 1 20 103 A75 75 0 0 1 95 28 Z" class="pad-body"/>
+              <circle cx="322" cy="103" r="54" class="pad-face-circle"/>
+              <!-- D-Pad -->
+              <rect x="82" y="66" width="26" height="26" rx="3" class="pad-dpad" data-svg-btn="Up"/>
+              <rect x="82" y="114" width="26" height="26" rx="3" class="pad-dpad" data-svg-btn="Down"/>
+              <rect x="58" y="90" width="26" height="26" rx="3" class="pad-dpad" data-svg-btn="Left"/>
+              <rect x="106" y="90" width="26" height="26" rx="3" class="pad-dpad" data-svg-btn="Right"/>
+              <rect x="82" y="90" width="26" height="26" class="pad-dpad-center"/>
+              <!-- Select & Start -->
+              <rect x="168" y="112" width="32" height="12" rx="6" transform="rotate(-28 184 118)" class="pad-meta-btn" data-svg-btn="Select"/>
+              <text x="175" y="138" class="pad-svg-subtext">SELECT</text>
+              <rect x="216" y="112" width="32" height="12" rx="6" transform="rotate(-28 232 118)" class="pad-meta-btn" data-svg-btn="Start"/>
+              <text x="225" y="138" class="pad-svg-subtext">START</text>
+              <!-- X, Y, A, B Face Buttons -->
+              <circle cx="322" cy="72" r="14" class="pad-btn-x" data-svg-btn="X"/>
+              <text x="322" y="77" class="pad-svg-text">X</text>
+              <circle cx="290" cy="103" r="14" class="pad-btn-y" data-svg-btn="Y"/>
+              <text x="290" y="108" class="pad-svg-text">Y</text>
+              <circle cx="354" cy="103" r="14" class="pad-btn-a" data-svg-btn="A"/>
+              <text x="354" y="108" class="pad-svg-text">A</text>
+              <circle cx="322" cy="134" r="14" class="pad-btn-b" data-svg-btn="B"/>
+              <text x="322" y="139" class="pad-svg-text">B</text>
+            </svg>
+            <p class="rebind-hint" id="rebind-prompt-banner">Click any button on the right to rebind it via Keyboard or SDL3 Gamepad.</p>
+          </div>
+
+          <div class="button-bindings-grid" id="bindings-grid">
+            <!-- Populated dynamically by JS for Up, Down, Left, Right, A, B, X, Y, L, R, Start, Select -->
+          </div>
+        </div>
+      </div>
+
+      <footer class="modal-footer">
+        <button type="button" class="btn-secondary" id="btn-reset-controls">Reset Defaults</button>
+        <div class="modal-footer-right">
+          <button type="button" class="btn-secondary" data-close-dialog="dialog-controls">Cancel</button>
+          <button type="button" class="btn-primary-play btn-sm" id="btn-save-controls">Save Controls</button>
+        </div>
+      </footer>
+    </div>
+  </dialog>
+
+  <!-- ==================================================================== -->
+  <!-- MODAL 2: GRAPHICS SETTINGS                                           -->
+  <!-- ==================================================================== -->
+  <dialog id="dialog-graphics" class="modal-dialog" closedby="any" aria-labelledby="graphics-modal-title">
+    <div class="modal-content">
+      <header class="modal-header">
+        <div>
+          <h2 id="graphics-modal-title">Graphics &amp; Shader Settings</h2>
+          <p class="modal-subtitle">Customize WebGL2 scaling, CRT shaders, and Snes9x CPU pixel filters</p>
+        </div>
+        <button type="button" class="modal-close-btn" data-close-dialog="dialog-graphics" aria-label="Close">✕</button>
+      </header>
+
+      <div class="modal-body settings-form-grid">
+        <div class="form-group">
+          <label for="gfx-aspect-select">Aspect Ratio</label>
+          <select id="gfx-aspect-select" class="form-select">
+            <option value="4:3">4:3 Standard CRT TV</option>
+            <option value="8:7">8:7 Pixel-Exact (256×224)</option>
+            <option value="stretch">Stretch to Fill Viewport</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="gfx-cpu-filter-select">CPU Pixel Filter</label>
+          <select id="gfx-cpu-filter-select" class="form-select">
+            <option value="none">None (Raw PPU Output)</option>
+            <option value="ntsc_composite">Blargg NTSC (Composite)</option>
+            <option value="ntsc_svideo">Blargg NTSC (S-Video)</option>
+            <option value="ntsc_rgb">Blargg NTSC (RGB)</option>
+            <option value="epx">EPX / Scale2x</option>
+            <option value="2xsai">2xSaI</option>
+            <option value="super2xsai">Super 2xSaI</option>
+            <option value="hq2x">HQ2x</option>
+            <option value="xbrz_2x">xBRZ 2x High-Detail</option>
+          </select>
+        </div>
+
+        <label class="checkbox-card">
+          <input type="checkbox" id="gfx-integer-check" />
+          <div>
+            <strong>Integer Pixel Scaling</strong>
+            <span>Scales viewport in exact 1x/2x/3x/4x multiples to eliminate sub-pixel shimmer</span>
+          </div>
+        </label>
+
+        <label class="checkbox-card">
+          <input type="checkbox" id="gfx-bilinear-check" />
+          <div>
+            <strong>Bilinear Texture Smoothing</strong>
+            <span>Applies linear interpolation instead of nearest-neighbor sharp pixels</span>
+          </div>
+        </label>
+
+        <label class="checkbox-card">
+          <input type="checkbox" id="gfx-crt-check" />
+          <div>
+            <strong>WebGL2 CRT Scanline &amp; Curvature Shader</strong>
+            <span>Simulates authentic Trinitron phosphor scanlines, vignette, and subtle barrel curvature</span>
+          </div>
+        </label>
+
+        <label class="checkbox-card">
+          <input type="checkbox" id="gfx-overscan-check" />
+          <div>
+            <strong>Crop Vertical Overscan (224p)</strong>
+            <span>Crops top/bottom blanking borders for clean 256×224 output</span>
+          </div>
+        </label>
+
+        <label class="checkbox-card">
+          <input type="checkbox" id="gfx-fps-check" />
+          <div>
+            <strong>Show Real-Time FPS &amp; Resolution Overlay</strong>
+            <span>Displays frame rate and internal PPU resolution in the top-right corner</span>
+          </div>
+        </label>
+
+        <label class="checkbox-card">
+          <input type="checkbox" id="gfx-fullscreen-check" />
+          <div>
+            <strong>Fullscreen Window Mode (F11)</strong>
+            <span>Expands Snex9x to borderless fullscreen on the active monitor</span>
+          </div>
+        </label>
+      </div>
+
+      <footer class="modal-footer">
+        <button type="button" class="btn-primary-play btn-sm" id="btn-save-graphics" data-close-dialog="dialog-graphics">Apply &amp; Close</button>
+      </footer>
+    </div>
+  </dialog>
+
+  <!-- ==================================================================== -->
+  <!-- MODAL 3: EMULATION & AUDIO SETTINGS                                  -->
+  <!-- ==================================================================== -->
+  <dialog id="dialog-emulation" class="modal-dialog" closedby="any" aria-labelledby="emulation-modal-title">
+    <div class="modal-content">
+      <header class="modal-header">
+        <div>
+          <h2 id="emulation-modal-title">Emulation &amp; Audio Settings</h2>
+          <p class="modal-subtitle">Configure Snes9x hardware timing, SuperFX overclocking, and SDL3 audio output</p>
+        </div>
+        <button type="button" class="modal-close-btn" data-close-dialog="dialog-emulation" aria-label="Close">✕</button>
+      </header>
+
+      <div class="modal-body settings-form-grid">
+        <div class="form-group">
+          <label for="emu-region-select">Console Region</label>
+          <select id="emu-region-select" class="form-select">
+            <option value="auto">Auto-Detect from Cartridge Header</option>
+            <option value="ntsc">Force NTSC (North America / Japan 60.098 Hz)</option>
+            <option value="pal">Force PAL (Europe 50.007 Hz)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="emu-speed-select">Emulation Speed Multiplier</label>
+          <select id="emu-speed-select" class="form-select">
+            <option value="1">1x Normal Speed (100%)</option>
+            <option value="2">2x Fast Forward (200%)</option>
+            <option value="4">4x Turbo Speed (400%)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="emu-superfx-select">SuperFX GSU Co-Processor Clock</label>
+          <select id="emu-superfx-select" class="form-select">
+            <option value="100">100% Authentic (10.74 / 21.48 MHz)</option>
+            <option value="150">150% Overclock (Smooth Star Fox / Stunt Race FX)</option>
+            <option value="200">200% Overclock (60 FPS SuperFX Boost)</option>
+            <option value="400">400% Extreme Overclock</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="emu-interp-select">SPC700 DSP Audio Interpolation</label>
+          <select id="emu-interp-select" class="form-select">
+            <option value="gaussian">Gaussian (Authentic SNES Hardware)</option>
+            <option value="cubic">Cubic (Crisp Highs)</option>
+            <option value="sinc">8-Point Sinc (Audiophile Quality)</option>
+            <option value="linear">Linear</option>
+            <option value="none">None</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="emu-volume-range">Master Audio Volume: <span id="emu-volume-label">85%</span></label>
+          <input type="range" id="emu-volume-range" min="0" max="100" value="85" class="form-range" />
+        </div>
+
+        <label class="checkbox-card">
+          <input type="checkbox" id="emu-mute-check" />
+          <div>
+            <strong>Mute Audio Output</strong>
+            <span>Silences the SDL3 audio stream while keeping Snes9x APU timing synchronized</span>
+          </div>
+        </label>
+
+        <label class="checkbox-card">
+          <input type="checkbox" id="emu-flicker-check" />
+          <div>
+            <strong>Reduce Sprite Scanline Flicker</strong>
+            <span>Increases PPU sprite limit from 34 to 128 tiles per scanline</span>
+          </div>
+        </label>
+
+        <label class="checkbox-card">
+          <input type="checkbox" id="emu-autosave-check" />
+          <div>
+            <strong>Auto-Save Cartridge SRAM (.srm)</strong>
+            <span>Automatically persists battery-backed save RAM to config/saves/</span>
+          </div>
+        </label>
+      </div>
+
+      <footer class="modal-footer">
+        <button type="button" class="btn-primary-play btn-sm" id="btn-save-emulation" data-close-dialog="dialog-emulation">Apply &amp; Close</button>
+      </footer>
+    </div>
+  </dialog>
+
+  <!-- ==================================================================== -->
+  <!-- MODAL 4: FULL 4,218-GAME SNES DATABASE EXPLORER                      -->
+  <!-- ==================================================================== -->
+  <dialog id="dialog-database" class="modal-dialog modal-lg" closedby="any" aria-labelledby="db-modal-title">
+    <div class="modal-content">
+      <header class="modal-header">
+        <div>
+          <h2 id="db-modal-title">SNES Master Game Database (4,218 Titles)</h2>
+          <p class="modal-subtitle">Search validated No-Intro + OpenVGDB + LaunchBox + ScreenScraper metadata in config/games_db.json</p>
+        </div>
+        <button type="button" class="modal-close-btn" data-close-dialog="dialog-database" aria-label="Close">✕</button>
+      </header>
+
+      <div class="modal-body">
+        <div class="db-search-bar">
+          <input type="search" id="db-modal-search-input" class="form-input" placeholder="Search by title, release year, or region (e.g., Chrono Trigger, 1994, ActRaiser)..." />
+          <button type="button" class="btn-secondary" id="btn-db-modal-search">Search</button>
+        </div>
+        <div class="db-results-list" id="db-modal-results">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <footer class="modal-footer">
+        <button type="button" class="btn-secondary" data-close-dialog="dialog-database">Close</button>
+      </footer>
+    </div>
+  </dialog>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
+

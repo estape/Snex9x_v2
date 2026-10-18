@@ -1,0 +1,26 @@
+{
+  "emulation": {
+    "activeStateSlot": 1,
+    "audioInterpolation": "gaussian",
+    "autoSaveSram": true,
+    "multitapMode": "auto",
+    "mute": false,
+    "reduceSpriteFlicker": false,
+    "region": "auto",
+    "romFolder": "D:\\Rodrigo\\Emuladores\\Snes9X\\Roms",
+    "speedMultiplier": 1,
+    "superFxOverclock": 100,
+    "volume": 85
+  },
+  "graphics": {
+    "aspectRatio": "4:3",
+    "bilinearFiltering": false,
+    "cpuFilter": "xbrz_2x",
+    "crtShader": false,
+    "fullscreen": false,
+    "integerScaling": false,
+    "overscanCrop": true,
+    "showFps": false,
+    "vsync": true
+  }
+}

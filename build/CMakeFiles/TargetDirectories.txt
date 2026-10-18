@@ -1,0 +1,5 @@
+D:/Rodrigo/Documents/Dev/vscode/Desktop/C++/Snex9x_v2/build/CMakeFiles/snes9x_core.dir
+D:/Rodrigo/Documents/Dev/vscode/Desktop/C++/Snex9x_v2/build/CMakeFiles/photino_native.dir
+D:/Rodrigo/Documents/Dev/vscode/Desktop/C++/Snex9x_v2/build/CMakeFiles/Snex9x_v2.dir
+D:/Rodrigo/Documents/Dev/vscode/Desktop/C++/Snex9x_v2/build/CMakeFiles/ALL_BUILD.dir
+D:/Rodrigo/Documents/Dev/vscode/Desktop/C++/Snex9x_v2/build/CMakeFiles/ZERO_CHECK.dir
