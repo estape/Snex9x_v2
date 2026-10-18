@@ -3,23 +3,23 @@
   "players": [
     {
       "buttons": {
-        "A": "KeyX",
-        "B": "KeyZ",
-        "Down": "ArrowDown",
-        "L": "KeyQ",
-        "Left": "ArrowLeft",
-        "R": "KeyW",
-        "Right": "ArrowRight",
-        "Select": "ShiftRight",
-        "Start": "Enter",
-        "Up": "ArrowUp",
-        "X": "KeyS",
-        "Y": "KeyA"
+        "A": "east",
+        "B": "south",
+        "Down": "dpdown",
+        "L": "leftshoulder",
+        "Left": "dpleft",
+        "R": "rightshoulder",
+        "Right": "dpright",
+        "Select": "back",
+        "Start": "start",
+        "Up": "dpup",
+        "X": "north",
+        "Y": "west"
       },
       "deadzone": 0.20000000298023224,
-      "deviceId": "keyboard",
-      "deviceName": "Keyboard (Arrows + Z/X/A/S/Q/W)",
-      "deviceType": "keyboard",
+      "deviceId": "gamepad_0",
+      "deviceName": "PS4 Controller",
+      "deviceType": "gamepad",
       "playerIndex": 1,
       "rumbleEnabled": true
     },

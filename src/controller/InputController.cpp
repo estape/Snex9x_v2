@@ -7,6 +7,21 @@ using json = nlohmann::json;
 
 namespace snex9x::controller {
 
+static const std::vector<std::pair<std::string, model::SnesJoypadButton>> kSnesButtonMap = {
+    {"Up", model::SNES_BTN_UP},
+    {"Down", model::SNES_BTN_DOWN},
+    {"Left", model::SNES_BTN_LEFT},
+    {"Right", model::SNES_BTN_RIGHT},
+    {"A", model::SNES_BTN_A},
+    {"B", model::SNES_BTN_B},
+    {"X", model::SNES_BTN_X},
+    {"Y", model::SNES_BTN_Y},
+    {"L", model::SNES_BTN_L},
+    {"R", model::SNES_BTN_R},
+    {"Start", model::SNES_BTN_START},
+    {"Select", model::SNES_BTN_SELECT}
+};
+
 static int WebKeyCodeToVirtualKey(const std::string& code) {
     if (code == "ArrowUp") return VK_UP;
     if (code == "ArrowDown") return VK_DOWN;
@@ -36,21 +51,6 @@ static int WebKeyCodeToVirtualKey(const std::string& code) {
     }
     return 0;
 }
-
-static const std::vector<std::pair<std::string, model::SnesJoypadButton>> kSnesButtonMap = {
-    {"Up", model::SNES_BTN_UP},
-    {"Down", model::SNES_BTN_DOWN},
-    {"Left", model::SNES_BTN_LEFT},
-    {"Right", model::SNES_BTN_RIGHT},
-    {"A", model::SNES_BTN_A},
-    {"B", model::SNES_BTN_B},
-    {"X", model::SNES_BTN_X},
-    {"Y", model::SNES_BTN_Y},
-    {"L", model::SNES_BTN_L},
-    {"R", model::SNES_BTN_R},
-    {"Start", model::SNES_BTN_START},
-    {"Select", model::SNES_BTN_SELECT}
-};
 
 InputController::InputController(model::ConfigModel& configModel, model::EmulatorModel& emulatorModel)
     : m_config(configModel), m_emulator(emulatorModel) {}

@@ -67,3 +67,23 @@
 2026-10-18 03:52:43.271: [INFO] BookmarksLoadDropped droppedNodes=0
 2026-10-18 03:52:43.271: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
 2026-10-18 04:17:32.549: [INFO] BookmarksSnapshot Shutdown total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-18 05:08:41.388: [INFO] CurrentProfilePath: D:\Rodrigo\Documents\Dev\vscode\Desktop\C++\Snex9x_v2\build\Debug\Snex9x_v2.exe.WebView2\EBWebView\Default
+2026-10-18 05:08:41.388: [INFO] Profiles total count: 1
+2026-10-18 05:08:41.388: [INFO] Profile: name=Perfil 1 path=D:\Rodrigo\Documents\Dev\vscode\Desktop\C++\Snex9x_v2\build\Debug\Snex9x_v2.exe.WebView2\EBWebView\Default lastActive=2026-10-18T03:52:43.328Z
+2026-10-18 05:08:41.388: [INFO] LastUsedProfileDir: D:\Rodrigo\Documents\Dev\vscode\Desktop\C++\Snex9x_v2\build\Debug\Snex9x_v2.exe.WebView2\EBWebView\Default
+2026-10-18 05:08:41.388: [INFO] MostRecentlyActiveProfile: name=Perfil 1 path=D:\Rodrigo\Documents\Dev\vscode\Desktop\C++\Snex9x_v2\build\Debug\Snex9x_v2.exe.WebView2\EBWebView\Default lastActive=2026-10-18T03:52:43.328Z
+2026-10-18 05:08:41.388: [INFO] OnDoneLoading sync enabled: 0
+2026-10-18 05:08:41.388: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-10-18 05:08:41.388: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-10-18 05:08:41.388: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-18 05:15:17.588: [INFO] BookmarksSnapshot Shutdown total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-18 05:22:00.177: [INFO] CurrentProfilePath: D:\Rodrigo\Documents\Dev\vscode\Desktop\C++\Snex9x_v2\build\Debug\Snex9x_v2.exe.WebView2\EBWebView\Default
+2026-10-18 05:22:00.177: [INFO] Profiles total count: 1
+2026-10-18 05:22:00.177: [INFO] Profile: name=Perfil 1 path=D:\Rodrigo\Documents\Dev\vscode\Desktop\C++\Snex9x_v2\build\Debug\Snex9x_v2.exe.WebView2\EBWebView\Default lastActive=2026-10-18T05:15:15.639Z
+2026-10-18 05:22:00.177: [INFO] LastUsedProfileDir: D:\Rodrigo\Documents\Dev\vscode\Desktop\C++\Snex9x_v2\build\Debug\Snex9x_v2.exe.WebView2\EBWebView\Default
+2026-10-18 05:22:00.177: [INFO] MostRecentlyActiveProfile: name=Perfil 1 path=D:\Rodrigo\Documents\Dev\vscode\Desktop\C++\Snex9x_v2\build\Debug\Snex9x_v2.exe.WebView2\EBWebView\Default lastActive=2026-10-18T05:15:15.639Z
+2026-10-18 05:22:00.177: [INFO] OnDoneLoading sync enabled: 0
+2026-10-18 05:22:00.177: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-10-18 05:22:00.177: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-10-18 05:22:00.177: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-18 05:32:50.581: [INFO] BookmarksSnapshot Shutdown total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1

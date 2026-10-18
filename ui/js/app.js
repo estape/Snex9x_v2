@@ -59,11 +59,34 @@ const state = {
 // Modern Web Guidance: animate-to-from-top-layer fallback helper
 const supportsAllowDiscrete = CSS.supports("transition-behavior", "allow-discrete");
 
+// Initialize WebGL2 Renderer
+const canvasEl = document.getElementById("snes-canvas");
+const stageEl = document.getElementById("canvas-stage");
+const renderer = new WebGLRenderer(canvasEl, stageEl, (fps, w, h) => {
+  const fpsOverlay = document.getElementById("fps-overlay");
+  if (fpsOverlay && !fpsOverlay.hidden) {
+    document.getElementById("fps-counter-text").textContent = `${fps.toFixed(1)} FPS`;
+    document.getElementById("res-counter-text").textContent = `${w}×${h}`;
+  }
+});
+
+ipc.onSharedVideoBuffer((buf) => {
+  renderer.attachSharedBuffer(buf);
+});
+
+function updateModalState() {
+  setTimeout(() => {
+    const hasOpenModal = Boolean(document.querySelector("dialog.modal-dialog[open]"));
+    ipc.send("setModalOpen", { open: hasOpenModal });
+  }, 10);
+}
+
 function closeTopLayer(el) {
   if (!el || !el.open) return;
   stopListeningForBind();
   if (supportsAllowDiscrete) {
     el.close();
+    updateModalState();
     return;
   }
   el.classList.add("is-closing");
@@ -72,6 +95,7 @@ function closeTopLayer(el) {
     () => {
       el.classList.remove("is-closing");
       el.close();
+      updateModalState();
     },
     { once: true }
   );
@@ -80,6 +104,8 @@ function closeTopLayer(el) {
 // Modern Web Guidance: light-dismiss-a-dialog fallback for browsers without closedby="any"
 function setupDialogLightDismiss(dialog) {
   if (!dialog) return;
+  dialog.addEventListener("close", updateModalState);
+  dialog.addEventListener("cancel", updateModalState);
   if (!("closedBy" in dialog)) {
     dialog.addEventListener("click", (e) => {
       if (e.target === dialog) {
@@ -111,20 +137,13 @@ function showToast(message) {
   }, 3200);
 }
 
-// Initialize WebGL2 Renderer
-const canvasEl = document.getElementById("snes-canvas");
-const stageEl = document.getElementById("canvas-stage");
-const renderer = new WebGLRenderer(canvasEl, stageEl, (fps, w, h) => {
-  const fpsOverlay = document.getElementById("fps-overlay");
-  if (fpsOverlay && !fpsOverlay.hidden) {
-    document.getElementById("fps-counter-text").textContent = `${fps.toFixed(1)} FPS`;
-    document.getElementById("res-counter-text").textContent = `${w}×${h}`;
-  }
-});
-
-ipc.onSharedVideoBuffer((buf) => {
-  renderer.attachSharedBuffer(buf);
-});
+function closeAllMenus() {
+  document.querySelectorAll(".menu-category").forEach((cat) => {
+    cat.classList.remove("open");
+    const btn = cat.querySelector(".menu-trigger");
+    if (btn) btn.setAttribute("aria-expanded", "false");
+  });
+}
 
 // ============================================================================
 // TOP MENUBAR & SLOTS SETUP
@@ -133,19 +152,13 @@ function initMenubar() {
   const categories = document.querySelectorAll(".menu-category");
   let anyMenuOpen = false;
 
-  function closeAllMenus() {
-    categories.forEach((cat) => {
-      cat.classList.remove("open");
-      const btn = cat.querySelector(".menu-trigger");
-      if (btn) btn.setAttribute("aria-expanded", "false");
-    });
-    anyMenuOpen = false;
-  }
-
   categories.forEach((cat) => {
     const trigger = cat.querySelector(".menu-trigger");
     trigger.addEventListener("click", (e) => {
       e.stopPropagation();
+      if (document.querySelector("dialog.modal-dialog[open]")) {
+        return;
+      }
       const isOpen = cat.classList.contains("open");
       closeAllMenus();
       if (!isOpen) {
@@ -156,6 +169,9 @@ function initMenubar() {
     });
 
     trigger.addEventListener("mouseenter", () => {
+      if (document.querySelector("dialog.modal-dialog[open]")) {
+        return;
+      }
       if (anyMenuOpen && !cat.classList.contains("open")) {
         closeAllMenus();
         cat.classList.add("open");
@@ -234,6 +250,9 @@ function initMenubar() {
 }
 
 function handleMenuAction(action) {
+  if (document.querySelector("dialog.modal-dialog[open]")) {
+    return;
+  }
   switch (action) {
     case "open-rom":
       ipc.send("openRomDialog", { autoStart: true });
@@ -576,10 +595,12 @@ function syncWorkspaceMode() {
 // MODALS: CONTROLS (4 PLAYERS), GRAPHICS, EMULATION, DATABASE
 // ============================================================================
 function openControlsModal() {
+  closeAllMenus();
   const dlg = document.getElementById("dialog-controls");
   ipc.send("refreshDevices");
   renderControlsModalPlayer(state.editingPlayerTab);
   dlg.showModal();
+  updateModalState();
 }
 
 function renderControlsModalPlayer(playerNum) {
@@ -700,6 +721,7 @@ function applyCapturedBinding(code) {
 }
 
 function openGraphicsModal() {
+  closeAllMenus();
   const gfx = state.settings.graphics;
   document.getElementById("gfx-aspect-select").value = gfx.aspectRatio || "4:3";
   document.getElementById("gfx-cpu-filter-select").value = gfx.cpuFilter || "none";
@@ -710,9 +732,11 @@ function openGraphicsModal() {
   document.getElementById("gfx-fps-check").checked = Boolean(gfx.showFps);
   document.getElementById("gfx-fullscreen-check").checked = Boolean(gfx.fullscreen);
   document.getElementById("dialog-graphics").showModal();
+  updateModalState();
 }
 
 function openEmulationModal() {
+  closeAllMenus();
   const emu = state.settings.emulation;
   document.getElementById("emu-region-select").value = emu.region || "auto";
   document.getElementById("emu-speed-select").value = String(emu.speedMultiplier || 1);
@@ -724,11 +748,14 @@ function openEmulationModal() {
   document.getElementById("emu-flicker-check").checked = Boolean(emu.reduceSpriteFlicker);
   document.getElementById("emu-autosave-check").checked = Boolean(emu.autoSaveSram);
   document.getElementById("dialog-emulation").showModal();
+  updateModalState();
 }
 
 function openDatabaseModal() {
+  closeAllMenus();
   const dlg = document.getElementById("dialog-database");
   dlg.showModal();
+  updateModalState();
   const q = document.getElementById("db-modal-search-input").value.trim();
   ipc.send("searchDatabase", { query: q });
 }
@@ -818,6 +845,20 @@ ipc.on("toast", (data) => {
 
 ipc.on("navLibrary", (data) => {
   if (state.emulation.running) return;
+
+  // If currently capturing a button bind in Configure Controls, ignore ALL gamepad nav events
+  if (state.listeningButtonName) {
+    return;
+  }
+
+  // If any modal dialog is open (e.g. Configure Controls), do NOT navigate the game list or launch games!
+  const openModal = document.querySelector("dialog.modal-dialog[open]");
+  if (openModal) {
+    if (data.action === "back") {
+      closeTopLayer(openModal);
+    }
+    return;
+  }
 
   const action = data.action;
   if (!state.filteredLibrary || state.filteredLibrary.length === 0) {
@@ -1017,6 +1058,15 @@ function initDomEvents() {
         stopListeningForBind();
       } else {
         applyCapturedBinding(e.code);
+      }
+      return;
+    }
+
+    const openModal = document.querySelector("dialog.modal-dialog[open]");
+    if (openModal) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeTopLayer(openModal);
       }
       return;
     }

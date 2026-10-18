@@ -2,10 +2,10 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "Release/Snex9x_v2.exe"
+			"path" : "Debug/Snex9x_v2.exe"
 		},
 		{
-			"path" : "Release/Snex9x_v2.pdb"
+			"path" : "Debug/Snex9x_v2.pdb"
 		}
 	],
 	"backtrace" : 1,
@@ -72,7 +72,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "/DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -std:c++17 -MD"
+					"fragment" : "/DWIN32 /D_WINDOWS /EHsc /Zi /Ob0 /Od /RTC1 -std:c++17 -MDd"
 				},
 				{
 					"backtrace" : 4,
@@ -206,11 +206,11 @@
 	[
 		{
 			"backtrace" : 2,
-			"id" : "snes9x_core::@6890427a1f51a3e7e1df"
+			"id" : "photino_native::@6890427a1f51a3e7e1df"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "photino_native::@6890427a1f51a3e7e1df"
+			"id" : "snes9x_core::@6890427a1f51a3e7e1df"
 		},
 		{
 			"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df"
@@ -222,11 +222,11 @@
 		"commandFragments" : 
 		[
 			{
-				"fragment" : "/DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -MD",
+				"fragment" : "/DWIN32 /D_WINDOWS /EHsc /Zi /Ob0 /Od /RTC1 -MDd",
 				"role" : "flags"
 			},
 			{
-				"fragment" : "/machine:x64 /INCREMENTAL:NO",
+				"fragment" : "/machine:x64 /debug /INCREMENTAL",
 				"role" : "flags"
 			},
 			{
@@ -235,12 +235,12 @@
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "Release\\snes9x_core.lib",
+				"fragment" : "Debug\\snes9x_core.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "Release\\photino_native.lib",
+				"fragment" : "Debug\\photino_native.lib",
 				"role" : "libraries"
 			},
 			{

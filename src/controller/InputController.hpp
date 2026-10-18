@@ -30,6 +30,16 @@ struct UiGamepadNavState {
 };
 
 class InputController {
+private:
+    model::ConfigModel& m_config;
+    model::EmulatorModel& m_emulator;
+    mutable std::mutex m_mutex;
+
+    bool m_initialized = false;
+    std::vector<SDL_Gamepad*> m_openGamepads;
+    std::vector<SDL_JoystickID> m_gamepadIds;
+    std::unordered_set<std::string> m_pressedWebKeys;
+
 public:
     InputController(model::ConfigModel& configModel, model::EmulatorModel& emulatorModel);
     ~InputController();
@@ -60,15 +70,6 @@ private:
     void RefreshGamepads();
     bool IsKeyboardKeyPressed(const std::string& webKeyCode, bool windowFocused) const;
     bool IsGamepadInputPressed(SDL_Gamepad* pad, const std::string& buttonCode, float deadzone) const;
-
-    model::ConfigModel& m_config;
-    model::EmulatorModel& m_emulator;
-    mutable std::mutex m_mutex;
-
-    bool m_initialized = false;
-    std::vector<SDL_Gamepad*> m_openGamepads;
-    std::vector<SDL_JoystickID> m_gamepadIds;
-    std::unordered_set<std::string> m_pressedWebKeys;
 };
 
 } // namespace snex9x::controller

@@ -16,6 +16,15 @@ class BoxartService {
 public:
     using BoxartReadyCallback = std::function<void(const std::string& gameId, const std::string& boxartFilename)>;
 
+private:
+    std::filesystem::path m_boxartsDir;
+    BoxartReadyCallback m_callback;
+    mutable std::mutex m_mutex;
+    std::unordered_set<std::string> m_inFlight;
+    std::unordered_set<std::string> m_failedCache;
+    std::atomic<bool> m_shuttingDown{false};
+
+public:
     BoxartService();
     ~BoxartService();
 
@@ -35,13 +44,6 @@ private:
     bool DownloadBoxartSync(const std::string& remoteFilename, const std::filesystem::path& destPath, int depth = 0);
     bool HttpGetBytes(const std::wstring& path, std::vector<uint8_t>& outData, uint32_t& outStatusCode);
     static bool IsValidPng(const std::vector<uint8_t>& data);
-
-    std::filesystem::path m_boxartsDir;
-    BoxartReadyCallback m_callback;
-    mutable std::mutex m_mutex;
-    std::unordered_set<std::string> m_inFlight;
-    std::unordered_set<std::string> m_failedCache;
-    std::atomic<bool> m_shuttingDown{false};
 };
 
 } // namespace snex9x::model

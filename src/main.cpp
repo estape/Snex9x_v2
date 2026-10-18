@@ -6,6 +6,18 @@
 #include <chrono>
 #include <thread>
 
+// ============================================================================
+// File-scope Constants and Variables
+// ============================================================================
+static const char kSelfTestFlag[] = "--self-test";
+static const char kDemoRomFileName[] = "Snex9x_Interactive_Test.sfc";
+static const char kDemoGameId[] = "builtin_snex9x_test";
+static const char kTestSmwCrc32[] = "B19ED489";
+static const size_t kMinDatabaseGamesExpected = 4000;
+
+// ============================================================================
+// Functions
+// ============================================================================
 static std::filesystem::path ResolveAppRootDirectory() {
     wchar_t exePathBuf[MAX_PATH] = {0};
     GetModuleFileNameW(nullptr, exePathBuf, MAX_PATH);
@@ -37,14 +49,14 @@ static int RunSelfTest(const std::filesystem::path& rootDir) {
 
     size_t dbSize = config.GetAllDatabaseGames().size();
     std::cout << "      Loaded games_db.json entries: " << dbSize << "\n";
-    if (dbSize < 4000) {
-        std::cerr << "FAIL: Expected >4000 games in games_db.json\n";
+    if (dbSize < kMinDatabaseGamesExpected) {
+        std::cerr << "FAIL: Expected >" << kMinDatabaseGamesExpected << " games in games_db.json\n";
         return 1;
     }
 
-    const auto* smw = config.FindGameByCrc32("B19ED489");
+    const auto* smw = config.FindGameByCrc32(kTestSmwCrc32);
     if (!smw || smw->name.find("Super Mario World") == std::string::npos) {
-        std::cerr << "FAIL: CRC32 lookup for Super Mario World (B19ED489) failed\n";
+        std::cerr << "FAIL: CRC32 lookup for Super Mario World (" << kTestSmwCrc32 << ") failed\n";
         return 1;
     }
     std::cout << "      Verified CRC32 lookup: " << smw->name << " (" << smw->year << ") -> " << smw->boxartFilename << "\n";
@@ -89,8 +101,8 @@ static int RunSelfTest(const std::filesystem::path& rootDir) {
     std::cout << "      Connected input devices detected: " << devices.size() << "\n";
 
     std::cout << "[4/5] Booting built-in SNES ROM and running 30 frames of 65c816 + PPU emulation...\n";
-    std::filesystem::path demoRom = config.GetConfigDir() / "roms" / "Snex9x_Interactive_Test.sfc";
-    if (!emulator.LoadAndStartRom(demoRom, "builtin_snex9x_test")) {
+    std::filesystem::path demoRom = config.GetConfigDir() / "roms" / kDemoRomFileName;
+    if (!emulator.LoadAndStartRom(demoRom, kDemoGameId)) {
         std::cerr << "FAIL: Failed to load and start built-in SNES ROM\n";
         return 1;
     }
@@ -143,7 +155,7 @@ static int RunSelfTest(const std::filesystem::path& rootDir) {
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR lpCmdLine, int) {
     std::filesystem::path rootDir = ResolveAppRootDirectory();
 
-    if (lpCmdLine && std::string(lpCmdLine).find("--self-test") != std::string::npos) {
+    if (lpCmdLine && std::string(lpCmdLine).find(kSelfTestFlag) != std::string::npos) {
         return RunSelfTest(rootDir);
     }
 
@@ -166,7 +178,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR lpCmdLine, int) {
 int main(int argc, char** argv) {
     std::filesystem::path rootDir = ResolveAppRootDirectory();
     for (int i = 1; i < argc; ++i) {
-        if (std::string(argv[i]) == "--self-test") {
+        if (std::string(argv[i]) == kSelfTestFlag) {
             return RunSelfTest(rootDir);
         }
     }

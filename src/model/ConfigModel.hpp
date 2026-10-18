@@ -64,6 +64,23 @@ struct GameDbEntry {
 };
 
 class ConfigModel {
+private:
+    mutable std::mutex m_mutex;
+    std::filesystem::path m_rootDir;
+    std::filesystem::path m_configDir;
+    std::filesystem::path m_boxartsDir;
+    std::filesystem::path m_savesDir;
+    std::filesystem::path m_uiDir;
+
+    GraphicsSettings m_graphics;
+    EmulationSettings m_emulation;
+    std::vector<PlayerBinding> m_bindings; // size 4
+
+    std::vector<GameDbEntry> m_gamesDb;
+    std::unordered_map<std::string, size_t> m_crcIndex;
+    std::unordered_map<std::string, size_t> m_noIntroIndex;
+    std::unordered_map<std::string, size_t> m_cleanNameIndex;
+
 public:
     ConfigModel();
     ~ConfigModel() = default;
@@ -106,23 +123,6 @@ public:
     const std::vector<GameDbEntry>& GetAllDatabaseGames() const { return m_gamesDb; }
 
     static std::string NormalizeLookupKey(const std::string& input);
-
-private:
-    mutable std::mutex m_mutex;
-    std::filesystem::path m_rootDir;
-    std::filesystem::path m_configDir;
-    std::filesystem::path m_boxartsDir;
-    std::filesystem::path m_savesDir;
-    std::filesystem::path m_uiDir;
-
-    GraphicsSettings m_graphics;
-    EmulationSettings m_emulation;
-    std::vector<PlayerBinding> m_bindings; // size 4
-
-    std::vector<GameDbEntry> m_gamesDb;
-    std::unordered_map<std::string, size_t> m_crcIndex;
-    std::unordered_map<std::string, size_t> m_noIntroIndex;
-    std::unordered_map<std::string, size_t> m_cleanNameIndex;
 };
 
 } // namespace snex9x::model

@@ -33,6 +33,12 @@ struct LibraryGame {
 };
 
 class GameLibraryModel {
+private:
+    ConfigModel& m_config;
+    BoxartService& m_boxart;
+    mutable std::mutex m_mutex;
+    std::vector<LibraryGame> m_games;
+
 public:
     GameLibraryModel(ConfigModel& configModel, BoxartService& boxartService);
     ~GameLibraryModel() = default;
@@ -69,11 +75,6 @@ private:
     void EnsureBuiltinDemoRom();
     void SortGamesAlphabetical();
     LibraryGame CreateEntryFromMetadata(const GameDbEntry& meta, const std::string& romPath = "") const;
-
-    ConfigModel& m_config;
-    BoxartService& m_boxart;
-    mutable std::mutex m_mutex;
-    std::vector<LibraryGame> m_games;
 };
 
 } // namespace snex9x::model

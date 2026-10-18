@@ -240,8 +240,8 @@ void AppController::UiGamepadNavigationLoop() {
             prevF11 = f11Pressed;
         }
 
-        // Library gamepad navigation is active only when emulation is NOT running
-        if (m_emulatorModel.IsRunning()) {
+        // Library gamepad navigation is active only when emulation is NOT running and no modal dialog is open
+        if (m_emulatorModel.IsRunning() || m_modalOpen.load()) {
             prevSouth = false;
             prevWest = false;
             prevEast = false;
@@ -706,6 +706,9 @@ void AppController::HandleWebMessage(const std::string& jsonMessage) {
             std::string code = msg.value("code", "");
             bool pressed = msg.value("pressed", false);
             m_inputController.SetWebKeyState(code, pressed);
+        }
+        else if (action == "setModalOpen") {
+            m_modalOpen = msg.value("open", false);
         }
         else if (action == "exitApp") {
             if (m_photino) {

@@ -12,6 +12,15 @@ namespace snex9x::model {
 
 static const wchar_t* kGithubHost = L"raw.githubusercontent.com";
 static const std::string kBoxartsBasePath = "/libretro-thumbnails/Nintendo_-_Super_Nintendo_Entertainment_System/cdd8f1d44612976cc9d422b0ace53a8542667688/Named_Boxarts/";
+static const std::string kRestrictedChars = "&*/:`<>?\\|\"";
+static const uint8_t kPngSignature[8] = {0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A};
+static const std::vector<std::string> kFallbackBoxartSuffixes = {
+    " (USA).png",
+    " (USA, Europe).png",
+    " (Europe).png",
+    " (Japan).png",
+    " (World).png"
+};
 
 BoxartService::BoxartService() = default;
 
@@ -31,11 +40,10 @@ void BoxartService::Shutdown() {
 }
 
 std::string BoxartService::SanitizeBoxartFilename(const std::string& name) {
-    static const std::string restricted = "&*/:`<>?\\|\"";
     std::string out;
     out.reserve(name.size());
     for (char c : name) {
-        if (restricted.find(c) != std::string::npos) {
+        if (kRestrictedChars.find(c) != std::string::npos) {
             out.push_back('_');
         } else {
             out.push_back(c);
@@ -76,8 +84,7 @@ std::filesystem::path BoxartService::GetCachedBoxartPath(const std::string& boxa
 
 bool BoxartService::IsValidPng(const std::vector<uint8_t>& data) {
     if (data.size() < 8) return false;
-    static const uint8_t pngSig[8] = {0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A};
-    return std::memcmp(data.data(), pngSig, 8) == 0;
+    return std::memcmp(data.data(), kPngSignature, 8) == 0;
 }
 
 bool BoxartService::HttpGetBytes(const std::wstring& path, std::vector<uint8_t>& outData, uint32_t& outStatusCode) {
@@ -220,14 +227,7 @@ void BoxartService::RequestBoxartAsync(const std::string& gameId, const std::str
             if (cleanSanitized.size() > 4 && cleanSanitized.substr(cleanSanitized.size() - 4) == ".png") {
                 cleanSanitized = cleanSanitized.substr(0, cleanSanitized.size() - 4);
             }
-            const std::vector<std::string> fallbackSuffixes = {
-                " (USA).png",
-                " (USA, Europe).png",
-                " (Europe).png",
-                " (Japan).png",
-                " (World).png"
-            };
-            for (const auto& suffix : fallbackSuffixes) {
+            for (const auto& suffix : kFallbackBoxartSuffixes) {
                 if (m_shuttingDown) break;
                 std::string candidate = cleanSanitized + suffix;
                 if (candidate == safeName) continue;

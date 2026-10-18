@@ -8,39 +8,35 @@ using json = nlohmann::json;
 
 namespace snex9x::model {
 
-static std::map<std::string, std::string> DefaultKeyboardButtonsP1() {
-    return {
-        {"Up", "ArrowUp"},
-        {"Down", "ArrowDown"},
-        {"Left", "ArrowLeft"},
-        {"Right", "ArrowRight"},
-        {"A", "KeyX"},
-        {"B", "KeyZ"},
-        {"X", "KeyS"},
-        {"Y", "KeyA"},
-        {"L", "KeyQ"},
-        {"R", "KeyW"},
-        {"Start", "Enter"},
-        {"Select", "ShiftRight"}
-    };
-}
+static const std::map<std::string, std::string> kDefaultKeyboardButtonsP1 = {
+    {"Up", "ArrowUp"},
+    {"Down", "ArrowDown"},
+    {"Left", "ArrowLeft"},
+    {"Right", "ArrowRight"},
+    {"A", "KeyX"},
+    {"B", "KeyZ"},
+    {"X", "KeyS"},
+    {"Y", "KeyA"},
+    {"L", "KeyQ"},
+    {"R", "KeyW"},
+    {"Start", "Enter"},
+    {"Select", "ShiftRight"}
+};
 
-static std::map<std::string, std::string> DefaultGamepadButtons() {
-    return {
-        {"Up", "dpup"},
-        {"Down", "dpdown"},
-        {"Left", "dpleft"},
-        {"Right", "dpright"},
-        {"A", "east"},
-        {"B", "south"},
-        {"X", "north"},
-        {"Y", "west"},
-        {"L", "leftshoulder"},
-        {"R", "rightshoulder"},
-        {"Start", "start"},
-        {"Select", "back"}
-    };
-}
+static const std::map<std::string, std::string> kDefaultGamepadButtons = {
+    {"Up", "dpup"},
+    {"Down", "dpdown"},
+    {"Left", "dpleft"},
+    {"Right", "dpright"},
+    {"A", "east"},
+    {"B", "south"},
+    {"X", "north"},
+    {"Y", "west"},
+    {"L", "leftshoulder"},
+    {"R", "rightshoulder"},
+    {"Start", "start"},
+    {"Select", "back"}
+};
 
 ConfigModel::ConfigModel() {
     ResetDefaultControls();
@@ -58,7 +54,7 @@ void ConfigModel::ResetDefaultControls() {
     m_bindings[0].deviceName = "Keyboard (Arrows + Z/X/A/S/Q/W)";
     m_bindings[0].rumbleEnabled = true;
     m_bindings[0].deadzone = 0.20f;
-    m_bindings[0].buttons = DefaultKeyboardButtonsP1();
+    m_bindings[0].buttons = kDefaultKeyboardButtonsP1;
 
     for (int i = 1; i < 4; ++i) {
         m_bindings[i].playerIndex = i + 1;
@@ -67,7 +63,7 @@ void ConfigModel::ResetDefaultControls() {
         m_bindings[i].deviceName = "Unassigned";
         m_bindings[i].rumbleEnabled = true;
         m_bindings[i].deadzone = 0.20f;
-        m_bindings[i].buttons = DefaultGamepadButtons();
+        m_bindings[i].buttons = kDefaultGamepadButtons;
     }
 }
 
