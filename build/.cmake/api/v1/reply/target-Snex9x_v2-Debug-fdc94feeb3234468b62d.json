@@ -2,10 +2,10 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "MinSizeRel/Snex9x_v2.exe"
+			"path" : "Debug/Snex9x_v2.exe"
 		},
 		{
-			"path" : "MinSizeRel/Snex9x_v2.pdb"
+			"path" : "Debug/Snex9x_v2.pdb"
 		}
 	],
 	"backtrace" : 1,
@@ -31,13 +31,13 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 147,
+				"line" : 148,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 155,
+				"line" : 156,
 				"parent" : 0
 			},
 			{
@@ -61,7 +61,7 @@
 			{
 				"command" : 4,
 				"file" : 0,
-				"line" : 149,
+				"line" : 150,
 				"parent" : 0
 			}
 		]
@@ -72,7 +72,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "/DWIN32 /D_WINDOWS /EHsc /O1 /Ob1 /DNDEBUG -std:c++17 -MD"
+					"fragment" : "/DWIN32 /D_WINDOWS /EHsc /Zi /Ob0 /Od /RTC1 -std:c++17 -MDd"
 				},
 				{
 					"backtrace" : 4,
@@ -193,12 +193,115 @@
 			"sourceIndexes" : 
 			[
 				0,
-				1,
 				2,
 				3,
 				4,
 				5,
-				6
+				6,
+				7
+			]
+		},
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-DWIN32 -D_DEBUG"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 2,
+					"define" : "ALLOW_CPU_OVERCLOCK"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "HAVE_STDINT_H"
+				},
+				{
+					"backtrace" : 5,
+					"define" : "NOMINMAX"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "RIGHTSHIFT_IS_SAR"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "UNICODE"
+				},
+				{
+					"backtrace" : 5,
+					"define" : "WIN32_LEAN_AND_MEAN"
+				},
+				{
+					"backtrace" : 5,
+					"define" : "_CRT_SECURE_NO_WARNINGS"
+				},
+				{
+					"backtrace" : 5,
+					"define" : "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "_UNICODE"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "__LIBRETRO__"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "__WIN32__"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 6,
+					"path" : "D:/Rodrigo/Documents/Dev/vscode/Desktop/C++/Snex9x_v2/src"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "D:/Rodrigo/Documents/Dev/vscode/Desktop/C++/PS1_Remake/SDL3/include"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "D:/Rodrigo/Documents/Dev/vscode/Desktop/C++/Snex9x_v2/external/photino.Native/Photino.Native"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "D:/Rodrigo/Documents/Dev/vscode/Desktop/C++/Snex9x_v2/external/snes9x"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "D:/Rodrigo/Documents/Dev/vscode/Desktop/C++/Snex9x_v2/external/snes9x/apu"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "D:/Rodrigo/Documents/Dev/vscode/Desktop/C++/Snex9x_v2/external/snes9x/apu/bapu"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "D:/Rodrigo/Documents/Dev/vscode/Desktop/C++/Snex9x_v2/external/snes9x/filter"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "D:/Rodrigo/Documents/Dev/vscode/Desktop/C++/Snex9x_v2/external/photino.Native/Photino.Native/Dependencies"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "D:/Rodrigo/Documents/Dev/vscode/Desktop/C++/photino.Native/packages/Microsoft.Web.WebView2.1.0.2903.40/build/native/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "D:/Rodrigo/Documents/Dev/vscode/Desktop/C++/photino.Native/packages/Microsoft.Windows.ImplementationLibrary.1.0.240803.1/include"
+				}
+			],
+			"language" : "RC",
+			"sourceIndexes" : 
+			[
+				1
 			]
 		}
 	],
@@ -206,11 +309,11 @@
 	[
 		{
 			"backtrace" : 2,
-			"id" : "photino_native::@6890427a1f51a3e7e1df"
+			"id" : "snes9x_core::@6890427a1f51a3e7e1df"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "snes9x_core::@6890427a1f51a3e7e1df"
+			"id" : "photino_native::@6890427a1f51a3e7e1df"
 		},
 		{
 			"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df"
@@ -222,11 +325,11 @@
 		"commandFragments" : 
 		[
 			{
-				"fragment" : "/DWIN32 /D_WINDOWS /EHsc /O1 /Ob1 /DNDEBUG -MD",
+				"fragment" : "/DWIN32 /D_WINDOWS /EHsc /Zi /Ob0 /Od /RTC1 -MDd",
 				"role" : "flags"
 			},
 			{
-				"fragment" : "/machine:x64 /INCREMENTAL:NO",
+				"fragment" : "/machine:x64 /debug /INCREMENTAL",
 				"role" : "flags"
 			},
 			{
@@ -235,12 +338,12 @@
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "MinSizeRel\\snes9x_core.lib",
+				"fragment" : "Debug\\snes9x_core.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "MinSizeRel\\photino_native.lib",
+				"fragment" : "Debug\\photino_native.lib",
 				"role" : "libraries"
 			},
 			{
@@ -344,7 +447,8 @@
 				3,
 				4,
 				5,
-				6
+				6,
+				7
 			]
 		}
 	],
@@ -354,6 +458,12 @@
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
 			"path" : "src/main.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "src/app.rc",
 			"sourceGroupIndex" : 0
 		},
 		{

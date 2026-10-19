@@ -136,6 +136,7 @@ target_link_libraries(photino_native PUBLIC
 # ============================================================================
 set(APP_SOURCES
     "src/main.cpp"
+    "src/app.rc"
     "src/model/ConfigModel.cpp"
     "src/model/BoxartService.cpp"
     "src/model/GameLibraryModel.cpp"

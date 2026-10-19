@@ -53,6 +53,7 @@ static const wchar_t* GuessMimeType(const std::filesystem::path& filePath) {
     if (ext == ".js" || ext == ".mjs") return L"text/javascript; charset=utf-8";
     if (ext == ".json") return L"application/json; charset=utf-8";
     if (ext == ".png") return L"image/png";
+    if (ext == ".ico") return L"image/x-icon";
     if (ext == ".jpg" || ext == ".jpeg") return L"image/jpeg";
     if (ext == ".svg") return L"image/svg+xml";
     if (ext == ".woff2") return L"font/woff2";
@@ -109,10 +110,16 @@ bool AppController::Initialize(HINSTANCE hInstance, const std::filesystem::path&
 
     Photino::Register(hInstance);
 
+    std::filesystem::path iconPath = appRootDir / "assets" / "snex9x.ico";
+    std::string iconPathUtf8 = iconPath.u8string();
+
     PhotinoInitParams initParams{};
     initParams.Size = sizeof(PhotinoInitParams);
     initParams.Title = (AutoString)"Snex9x v2 - Super Nintendo Entertainment System";
     initParams.StartUrl = (AutoString)L"snes://app/index.html";
+    if (std::filesystem::exists(iconPath)) {
+        initParams.WindowIconFile = (AutoString)iconPathUtf8.c_str();
+    }
     initParams.CustomSchemeNames[0] = (AutoString)"snes";
     initParams.CustomSchemeHandler = (WebResourceRequestedCallback*)&AppController::OnWebResourceRequested;
     initParams.WebMessageReceivedHandler = (WebMessageReceivedCallback*)&AppController::OnWebMessageReceived;
@@ -138,6 +145,14 @@ bool AppController::Initialize(HINSTANCE hInstance, const std::filesystem::path&
     initParams.Zoom = 100;
 
     m_photino = new Photino(&initParams);
+    if (HWND hwnd = m_photino->getHwnd()) {
+        HICON hIconSmall = (HICON)LoadImageW(hInstance, MAKEINTRESOURCEW(101), IMAGE_ICON,
+            GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR | LR_SHARED);
+        HICON hIconBig = (HICON)LoadImageW(hInstance, MAKEINTRESOURCEW(101), IMAGE_ICON,
+            GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON), LR_DEFAULTCOLOR | LR_SHARED);
+        if (hIconSmall) SendMessageW(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconSmall);
+        if (hIconBig) SendMessageW(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIconBig);
+    }
     m_uiGamepadThread = std::thread(&AppController::UiGamepadNavigationLoop, this);
     return true;
 }
