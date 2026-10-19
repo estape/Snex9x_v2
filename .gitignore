@@ -53,3 +53,4 @@ cmake_install.cmake
 # Runtime WebView2 user data
 *.WebView2/
 EBWebView/
+
