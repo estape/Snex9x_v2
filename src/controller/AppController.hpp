@@ -30,6 +30,7 @@ private:
     std::atomic<bool> m_windowFocused{true};
     std::atomic<bool> m_modalOpen{false};
     std::atomic<bool> m_shuttingDown{false};
+    std::atomic<bool> m_isShutdown{false};
     std::mutex m_ipcMutex;
     std::vector<std::string> m_pendingIpcQueue;
     std::thread m_uiGamepadThread;

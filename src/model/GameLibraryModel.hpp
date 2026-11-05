@@ -72,7 +72,6 @@ public:
     static std::string ComputeRomCrc32(const std::filesystem::path& romPath);
 
 private:
-    void EnsureBuiltinDemoRom();
     void SortGamesAlphabetical();
     LibraryGame CreateEntryFromMetadata(const GameDbEntry& meta, const std::string& romPath = "") const;
 };

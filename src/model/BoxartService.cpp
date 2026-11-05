@@ -31,12 +31,27 @@ BoxartService::~BoxartService() {
 void BoxartService::Initialize(const std::filesystem::path& boxartsDir, BoxartReadyCallback callback) {
     m_boxartsDir = boxartsDir;
     m_callback = std::move(callback);
+    m_shuttingDown = false;
     std::error_code ec;
     std::filesystem::create_directories(m_boxartsDir, ec);
+
+    std::lock_guard<std::mutex> lock(m_mutex);
+    if (!m_workerRunning) {
+        m_workerRunning = true;
+        m_workerThread = std::thread(&BoxartService::WorkerLoop, this);
+    }
 }
 
 void BoxartService::Shutdown() {
-    m_shuttingDown = true;
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_shuttingDown = true;
+        m_workerRunning = false;
+    }
+    m_cv.notify_all();
+    if (m_workerThread.joinable()) {
+        m_workerThread.join();
+    }
 }
 
 std::string BoxartService::SanitizeBoxartFilename(const std::string& name) {
@@ -201,6 +216,63 @@ bool BoxartService::DownloadBoxartSync(const std::string& remoteFilename, const 
     return false;
 }
 
+void BoxartService::WorkerLoop() {
+    while (true) {
+        BoxartRequest req;
+        {
+            std::unique_lock<std::mutex> lock(m_mutex);
+            m_cv.wait(lock, [this]() {
+                return !m_workerRunning || !m_queue.empty();
+            });
+            if (!m_workerRunning && m_queue.empty()) {
+                break;
+            }
+            if (m_queue.empty()) {
+                continue;
+            }
+            req = std::move(m_queue.front());
+            m_queue.pop();
+        }
+
+        if (m_shuttingDown) break;
+
+        ProcessDownload(req);
+    }
+}
+
+void BoxartService::ProcessDownload(const BoxartRequest& req) {
+    std::filesystem::path destPath = GetCachedBoxartPath(req.safeName);
+    bool success = DownloadBoxartSync(req.safeName, destPath);
+
+    if (!success && !req.cleanGameTitle.empty()) {
+        std::string cleanSanitized = SanitizeBoxartFilename(req.cleanGameTitle);
+        if (cleanSanitized.size() > 4 && cleanSanitized.substr(cleanSanitized.size() - 4) == ".png") {
+            cleanSanitized = cleanSanitized.substr(0, cleanSanitized.size() - 4);
+        }
+        for (const auto& suffix : kFallbackBoxartSuffixes) {
+            if (m_shuttingDown) break;
+            std::string candidate = cleanSanitized + suffix;
+            if (candidate == req.safeName) continue;
+            if (DownloadBoxartSync(candidate, destPath)) {
+                success = true;
+                break;
+            }
+        }
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_inFlight.erase(req.safeName);
+        if (!success) {
+            m_failedCache.insert(req.safeName);
+        }
+    }
+
+    if (success && !m_shuttingDown && m_callback) {
+        m_callback(req.gameId, req.safeName);
+    }
+}
+
 void BoxartService::RequestBoxartAsync(const std::string& gameId, const std::string& boxartFilename, const std::string& cleanGameTitle) {
     if (boxartFilename.empty() || m_shuttingDown) return;
 
@@ -216,40 +288,9 @@ void BoxartService::RequestBoxartAsync(const std::string& gameId, const std::str
             return;
         }
         m_inFlight.insert(safeName);
+        m_queue.push(BoxartRequest{gameId, safeName, cleanGameTitle});
     }
-
-    std::thread([this, gameId, safeName, cleanGameTitle]() {
-        std::filesystem::path destPath = GetCachedBoxartPath(safeName);
-        bool success = DownloadBoxartSync(safeName, destPath);
-
-        if (!success && !cleanGameTitle.empty()) {
-            std::string cleanSanitized = SanitizeBoxartFilename(cleanGameTitle);
-            if (cleanSanitized.size() > 4 && cleanSanitized.substr(cleanSanitized.size() - 4) == ".png") {
-                cleanSanitized = cleanSanitized.substr(0, cleanSanitized.size() - 4);
-            }
-            for (const auto& suffix : kFallbackBoxartSuffixes) {
-                if (m_shuttingDown) break;
-                std::string candidate = cleanSanitized + suffix;
-                if (candidate == safeName) continue;
-                if (DownloadBoxartSync(candidate, destPath)) {
-                    success = true;
-                    break;
-                }
-            }
-        }
-
-        {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            m_inFlight.erase(safeName);
-            if (!success) {
-                m_failedCache.insert(safeName);
-            }
-        }
-
-        if (success && !m_shuttingDown && m_callback) {
-            m_callback(gameId, safeName);
-        }
-    }).detach();
+    m_cv.notify_one();
 }
 
 } // namespace snex9x::model

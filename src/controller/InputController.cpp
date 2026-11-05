@@ -86,7 +86,7 @@ void InputController::Shutdown() {
 }
 
 void InputController::RefreshGamepads() {
-    SDL_PumpEvents();
+    SDL_UpdateGamepads();
 
     int count = 0;
     SDL_JoystickID* ids = SDL_GetGamepads(&count);
@@ -227,7 +227,14 @@ void InputController::PollAndReportInputs(bool windowFocused) {
     std::lock_guard<std::mutex> lock(m_mutex);
     if (!m_initialized) return;
 
-    RefreshGamepads();
+    static auto s_lastPollRefresh = std::chrono::steady_clock::now();
+    auto now = std::chrono::steady_clock::now();
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(now - s_lastPollRefresh).count() > 1000) {
+        RefreshGamepads();
+        s_lastPollRefresh = now;
+    } else {
+        SDL_UpdateGamepads();
+    }
     auto bindings = m_config.GetPlayerBindings();
 
     for (size_t i = 0; i < bindings.size() && i < 4; ++i) {
@@ -350,7 +357,14 @@ UiGamepadNavState InputController::PollUiGamepadNavigationState() {
     UiGamepadNavState state{};
     if (!m_initialized) return state;
 
-    RefreshGamepads();
+    static auto s_lastNavRefresh = std::chrono::steady_clock::now();
+    auto now = std::chrono::steady_clock::now();
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(now - s_lastNavRefresh).count() > 1000) {
+        RefreshGamepads();
+        s_lastNavRefresh = now;
+    } else {
+        SDL_UpdateGamepads();
+    }
     if (m_openGamepads.empty()) return state;
 
     const float deadzone = 0.35f;
