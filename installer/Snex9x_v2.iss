@@ -92,3 +92,4 @@ Root: HKA; Subkey: "Software\Classes\Snex9x.ROM\shell\open\command"; ValueType: 
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+
