@@ -13,48 +13,6 @@ namespace snex9x::model {
 static uint32_t s_crcTable[256];
 static bool s_crcTableInitialized = false;
 
-// 65c816 machine code for built-in interactive test ROM
-static const uint8_t kInteractiveTestRomCode[] = {
-    0x78,                   // 00: SEI
-    0x18,                   // 01: CLC
-    0xFB,                   // 02: XCE (switch to native mode)
-    0xC2, 0x30,             // 03: REP #$30 (16-bit A, X, Y)
-    0xA9, 0xFF, 0x1F,       // 05: LDA #$1FFF
-    0x1B,                   // 08: TCS
-    0xE2, 0x20,             // 09: SEP #$20 (8-bit A, 16-bit X/Y)
-    0xA9, 0x8F,             // 0B: LDA #$8F (force blank)
-    0x8D, 0x00, 0x21,       // 0D: STA $2100 (INIDISP)
-    0xA9, 0x01,             // 10: LDA #$01
-    0x8D, 0x05, 0x21,       // 12: STA $2105 (BGMODE 1)
-    0xA9, 0x01,             // 15: LDA #$01 (enable auto-joypad read)
-    0x8D, 0x00, 0x42,       // 17: STA $4200 (NMITIMEN)
-    0xA9, 0x0F,             // 1A: LDA #$0F (full brightness, screen on)
-    0x8D, 0x00, 0x21,       // 1C: STA $2100 (INIDISP)
-    0xA2, 0x00, 0x00,       // 1F: LDX #$0000
-    // MainFrameLoop (offset 0x22 = 34):
-    // Wait for VBlank start ($4212 bit 7 == 1)
-    0xAD, 0x12, 0x42,       // 22: LDA $4212
-    0x10, 0xFB,             // 25: BPL -5 (to 0x22)
-    // Set CGRAM address 0 (backdrop color)
-    0x9C, 0x21, 0x21,       // 27: STZ $2121 (CGADD)
-    // Compute animated color based on frame counter X and Joypad1 ($4218/$4219)
-    0xE8,                   // 2A: INX
-    0x8A,                   // 2B: TXA
-    0x09, 0x0C,             // 2C: ORA #$0C (non-zero vibrant red/green channel)
-    0x18,                   // 2E: CLC
-    0x6D, 0x18, 0x42,       // 2F: ADC $4218
-    0x8D, 0x22, 0x21,       // 32: STA $2122 (CGDATA low byte)
-    0xAD, 0x19, 0x42,       // 35: LDA $4219
-    0x09, 0x54,             // 38: ORA #$54 (rich indigo/violet high byte)
-    0x8D, 0x22, 0x21,       // 3A: STA $2122 (CGDATA high byte)
-    // Wait for VBlank end ($4212 bit 7 == 0)
-    0xAD, 0x12, 0x42,       // 3D: LDA $4212
-    0x30, 0xFB,             // 40: BMI -5 (to 0x3D)
-    0x80, 0xDE              // 42: BRA -34 (from 0x44 back to 0x22)
-};
-
-static const char kInteractiveTestRomTitle[22] = "SNEX9X V2 TEST ROM   ";
-
 static void InitCrcTable() {
     if (s_crcTableInitialized) return;
     for (uint32_t i = 0; i < 256; ++i) {
@@ -118,60 +76,6 @@ std::string GameLibraryModel::ComputeRomCrc32(const std::filesystem::path& romPa
     return oss.str();
 }
 
-void GameLibraryModel::EnsureBuiltinDemoRom() {
-    std::filesystem::path romsDir = m_config.GetConfigDir() / "roms";
-    std::error_code ec;
-    std::filesystem::create_directories(romsDir, ec);
-    std::filesystem::path demoPath = romsDir / "Snex9x_Interactive_Test.sfc";
-    if (std::filesystem::exists(demoPath, ec) && std::filesystem::file_size(demoPath, ec) == 65536) {
-        return;
-    }
-
-    // Build a valid 64 KB LoROM SNES test cartridge (65c816 machine code + SNES internal header)
-    // Displays animated color bars & responds to Joypad 1 buttons by cycling backdrop colors
-    std::vector<uint8_t> rom(65536, 0x00);
-
-    // Reset vector code at $8000 (offset 0x0000 in LoROM)
-    std::memcpy(rom.data(), kInteractiveTestRomCode, sizeof(kInteractiveTestRomCode));
-
-    // NMI / IRQ handler at $8100: RTI (0x40)
-    rom[0x0100] = 0x40;
-
-    // SNES LoROM internal header at 0x7FC0
-    std::memcpy(&rom[0x7FC0], kInteractiveTestRomTitle, 21);
-    rom[0x7FD5] = 0x20; // Map mode: LoROM
-    rom[0x7FD6] = 0x00; // Cart type: ROM only
-    rom[0x7FD7] = 0x06; // ROM size: 64 KB (1 << 6)
-    rom[0x7FD8] = 0x00; // SRAM size: 0
-    rom[0x7FD9] = 0x01; // Country: North America (NTSC 60Hz)
-    rom[0x7FDA] = 0x01; // Developer ID
-    rom[0x7FDB] = 0x00; // Version 1.0
-
-    // Native vectors
-    rom[0x7FEA] = 0x00; rom[0x7FEB] = 0x81; // NMI -> $8100
-    rom[0x7FEE] = 0x00; rom[0x7FEF] = 0x81; // IRQ -> $8100
-    // Emulation vectors
-    rom[0x7FFA] = 0x00; rom[0x7FFB] = 0x81; // NMI -> $8100
-    rom[0x7FFC] = 0x00; rom[0x7FFD] = 0x80; // RESET -> $8000
-    rom[0x7FFE] = 0x00; rom[0x7FFF] = 0x81; // IRQ/BRK -> $8100
-
-    // Calculate checksum and complement
-    rom[0x7FDC] = 0xFF; rom[0x7FDD] = 0xFF;
-    rom[0x7FDE] = 0x00; rom[0x7FDF] = 0x00;
-    uint16_t sum = 0;
-    for (uint8_t b : rom) sum += b;
-    uint16_t comp = sum ^ 0xFFFF;
-    rom[0x7FDC] = static_cast<uint8_t>(comp & 0xFF);
-    rom[0x7FDD] = static_cast<uint8_t>((comp >> 8) & 0xFF);
-    rom[0x7FDE] = static_cast<uint8_t>(sum & 0xFF);
-    rom[0x7FDF] = static_cast<uint8_t>((sum >> 8) & 0xFF);
-
-    std::ofstream out(demoPath, std::ios::binary);
-    if (out.is_open()) {
-        out.write(reinterpret_cast<const char*>(rom.data()), static_cast<std::streamsize>(rom.size()));
-    }
-}
-
 LibraryGame GameLibraryModel::CreateEntryFromMetadata(const GameDbEntry& meta, const std::string& romPath) const {
     LibraryGame g;
     g.id = meta.id.empty() ? ("game_" + ConfigModel::NormalizeLookupKey(meta.noIntroName)) : meta.id;
@@ -206,7 +110,6 @@ void GameLibraryModel::SortGamesAlphabetical() {
 }
 
 bool GameLibraryModel::Initialize() {
-    EnsureBuiltinDemoRom();
     if (LoadLibrary()) {
         // Retain only valid local games that the user actually scanned or added
         {

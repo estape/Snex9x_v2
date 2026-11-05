@@ -54,3 +54,7 @@ cmake_install.cmake
 *.WebView2/
 EBWebView/
 
+# Logs
+*.log
+
+

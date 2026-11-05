@@ -352,14 +352,12 @@ bool EmulatorModel::LoadAndStartRom(const std::filesystem::path& romPath, const 
 }
 
 void EmulatorModel::StopAndCloseRom() {
-    if (m_running.load()) {
-        m_running = false;
-        if (m_emuThread.joinable()) {
-            m_emuThread.join();
-        }
-        if (m_config.GetEmulationSettings().autoSaveSram) {
-            SaveSram();
-        }
+    bool wasRunning = m_running.exchange(false);
+    if (m_emuThread.joinable()) {
+        m_emuThread.join();
+    }
+    if (wasRunning && m_config.GetEmulationSettings().autoSaveSram) {
+        SaveSram();
     }
     if (m_audioStream) {
         SDL_ClearAudioStream(m_audioStream);
@@ -472,49 +470,57 @@ bool EmulatorModel::LoadStateFile(const std::filesystem::path& filePath) {
 }
 
 void EmulatorModel::EmulationLoop() {
-    using clock = std::chrono::steady_clock;
-    auto nextFrameTime = clock::now();
-    auto fpsTimer = clock::now();
-    int framesSinceLastMeasure = 0;
+    try {
+        using clock = std::chrono::steady_clock;
+        auto nextFrameTime = clock::now();
+        auto fpsTimer = clock::now();
+        int framesSinceLastMeasure = 0;
 
-    while (m_running.load()) {
-        if (m_paused.load()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(16));
-            nextFrameTime = clock::now();
-            continue;
+        while (m_running.load()) {
+            if (m_paused.load()) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(16));
+                nextFrameTime = clock::now();
+                continue;
+            }
+
+            if (m_inputPollCallback) {
+                m_inputPollCallback();
+            }
+
+            auto emu = m_config.GetEmulationSettings();
+            int speedMult = std::clamp(emu.speedMultiplier, 1, 8);
+            double baseFps = Settings.PAL ? (21281370.0 / 425568.0) : (21477272.0 / 357366.0);
+            double targetFps = baseFps * static_cast<double>(speedMult);
+            auto frameDuration = std::chrono::microseconds(static_cast<int64_t>(1000000.0 / targetFps));
+
+            {
+                std::lock_guard<std::mutex> lock(m_coreMutex);
+                IPPU.RenderThisFrame = TRUE;
+                S9xMainLoop();
+            }
+
+            ++framesSinceLastMeasure;
+            auto now = clock::now();
+            double elapsedSec = std::chrono::duration<double>(now - fpsTimer).count();
+            if (elapsedSec >= 0.5) {
+                m_currentFps.store(static_cast<double>(framesSinceLastMeasure) / elapsedSec);
+                framesSinceLastMeasure = 0;
+                fpsTimer = now;
+            }
+
+            nextFrameTime += frameDuration;
+            if (now < nextFrameTime) {
+                std::this_thread::sleep_until(nextFrameTime);
+            } else if (now - nextFrameTime > std::chrono::milliseconds(100)) {
+                nextFrameTime = now;
+            }
         }
-
-        if (m_inputPollCallback) {
-            m_inputPollCallback();
-        }
-
-        auto emu = m_config.GetEmulationSettings();
-        int speedMult = std::clamp(emu.speedMultiplier, 1, 8);
-        double baseFps = Settings.PAL ? (21281370.0 / 425568.0) : (21477272.0 / 357366.0);
-        double targetFps = baseFps * static_cast<double>(speedMult);
-        auto frameDuration = std::chrono::microseconds(static_cast<int64_t>(1000000.0 / targetFps));
-
-        {
-            std::lock_guard<std::mutex> lock(m_coreMutex);
-            IPPU.RenderThisFrame = TRUE;
-            S9xMainLoop();
-        }
-
-        ++framesSinceLastMeasure;
-        auto now = clock::now();
-        double elapsedSec = std::chrono::duration<double>(now - fpsTimer).count();
-        if (elapsedSec >= 0.5) {
-            m_currentFps.store(static_cast<double>(framesSinceLastMeasure) / elapsedSec);
-            framesSinceLastMeasure = 0;
-            fpsTimer = now;
-        }
-
-        nextFrameTime += frameDuration;
-        if (now < nextFrameTime) {
-            std::this_thread::sleep_until(nextFrameTime);
-        } else if (now - nextFrameTime > std::chrono::milliseconds(100)) {
-            nextFrameTime = now;
-        }
+    } catch (const std::exception& e) {
+        std::cerr << "[EmulatorModel] Exception in EmulationLoop: " << e.what() << "\n";
+        m_running = false;
+    } catch (...) {
+        std::cerr << "[EmulatorModel] Unknown exception in EmulationLoop\n";
+        m_running = false;
     }
 }
 

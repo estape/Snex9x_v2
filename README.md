@@ -20,7 +20,6 @@ Through a zero-copy shared memory video pipeline, Snex9x v2 delivers pixel-perfe
 - [Project Directory Structure](#project-directory-structure)
 - [System Requirements & Prerequisites](#system-requirements--prerequisites)
 - [Compilation & Build Guide](#compilation--build-guide)
-- [Running the Automated Self-Test](#running-the-automated-self-test)
 - [Default Controls & Hotkeys](#default-controls--hotkeys)
 - [Third-Party Libraries & Licensing](#third-party-libraries--licensing)
 - [Security Policy](#security-policy)
@@ -112,7 +111,7 @@ Snex9x_v2/
 ├── SECURITY.md                 # Security policy and vulnerability disclosure
 ├── config/                     # Runtime application data & settings
 │   ├── boxarts/                # Cached boxart cover images (.png)
-│   ├── roms/                   # Built-in test cartridge & local ROMs
+│   ├── roms/                   # User ROM directory
 │   ├── saves/                  # Battery SRAM (.srm) & Save States (.s01..s10)
 │   ├── controls.json           # 4-player controller bindings & deadzones
 │   ├── games_db.json           # 4,218 title SNES game database
@@ -122,7 +121,7 @@ Snex9x_v2/
 │   ├── photino.Native/         # Photino.Native C++ desktop window wrapper
 │   └── snes9x/                 # Snes9x emulator core source
 ├── src/                        # C++ source code (MVC Architecture)
-│   ├── main.cpp                # Application entry point & automated self-test
+│   ├── main.cpp                # Application entry point
 │   ├── app.rc                  # Windows application icon & manifest resources
 │   ├── model/                  # Model layer: core state, library, emulation
 │   │   ├── ConfigModel.hpp / .cpp
@@ -134,8 +133,9 @@ Snex9x_v2/
 │       └── AppController.hpp / .cpp
 └── ui/                         # Frontend View layer
     ├── index.html              # Main HTML5 layout & modal dialogs
-    ├── css/
-    │   └── style.css           # Glassmorphism styling, animations & theme
+    ├── icon.png                # Window and browser icon
+    ├── styles/
+    │   └── main.css            # Glassmorphism styling, animations & theme
     └── js/
         ├── app.js              # View controller, DOM listeners & menus
         ├── ipc.js              # WebView2 IPC & shared buffer bridge
@@ -194,23 +194,6 @@ cmake --build build --config Debug
 ```
 The debug executable will be output to:
 `build\Debug\Snex9x_v2.exe`
-
----
-
-## Running the Automated Self-Test
-
-Snex9x v2 includes a built-in headless **Automated Self-Test** suite that verifies all core subsystems without needing to launch the graphical user interface:
-
-```powershell
-.\build\Release\Snex9x_v2.exe --self-test
-```
-
-### What the Self-Test Verifies:
-1. **ConfigModel**: Initializes config directories, loads `games_db.json` (>4,000 titles), and tests CRC32 lookups.
-2. **BoxartService & GameLibraryModel**: Initializes the ROM library, verifies caching, and checks network connectivity to `libretro-thumbnails`.
-3. **EmulatorModel & InputController**: Boots the Snes9x core, checks SDL3 audio stream initialization, and detects connected gamepads.
-4. **PPU Emulation & Filters**: Runs 30 frames of 65c816 machine code on the built-in interactive test ROM, verifies that frame rendering advances, tests non-black pixel output, and exercises the **xBRZ 2x** CPU filter.
-5. **State Persistence**: Tests frozen memory serialization with save and load state slot operations.
 
 ---
 

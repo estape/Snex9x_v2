@@ -12,8 +12,46 @@ using json = nlohmann::json;
 
 namespace snex9x::controller {
 
+// ============================================================================
+// File-scope Constants and Variables
+// ============================================================================
 AppController* AppController::s_instance = nullptr;
 
+static const char kAppTitle[] = "Snex9x v2 - Super Nintendo Entertainment System";
+static const wchar_t kStartUrl[] = L"snes://app/index.html";
+static const char kCustomSchemeName[] = "snes";
+static const std::string kAppSchemePrefix = "snes://app/";
+static const std::string kBoxartsSchemePrefix = "snes://boxarts/";
+static const std::string kFrameSchemePrefix = "snes://frame/";
+static const std::string kApiFrameSchemePrefix = "snes://app/api/frame";
+
+static constexpr int kDefaultWindowWidth = 1360;
+static constexpr int kDefaultWindowHeight = 860;
+static constexpr int kMinWindowWidth = 960;
+static constexpr int kMinWindowHeight = 620;
+
+static constexpr int kUiGamepadPollIntervalMs = 16;
+static constexpr int kUiGamepadInitialDelayMs = 260;
+static constexpr int kUiGamepadRepeatRateMs = 70;
+
+static const COMDLG_FILTERSPEC kRomFilterSpecs[] = {
+    { L"SNES ROM Images (*.sfc;*.smc;*.swc;*.fig;*.bs)", L"*.sfc;*.smc;*.swc;*.fig;*.bs" },
+    { L"All Files (*.*)", L"*.*" }
+};
+
+static const COMDLG_FILTERSPEC kSaveStateFilterSpecs[] = {
+    { L"Snes9x Save State (*.frz;*.s01)", L"*.frz;*.s01" },
+    { L"All Files (*.*)", L"*.*" }
+};
+
+static const COMDLG_FILTERSPEC kLoadStateFilterSpecs[] = {
+    { L"Snes9x Save State (*.frz;*.s01;*.s02;*.s03;*.s04;*.s05;*.s06;*.s07;*.s08;*.s09;*.s10)", L"*.frz;*.s01;*.s02;*.s03;*.s04;*.s05;*.s06;*.s07;*.s08;*.s09;*.s10" },
+    { L"All Files (*.*)", L"*.*" }
+};
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
 static std::string WideToUtf8(const std::wstring& wstr) {
     if (wstr.empty()) return "";
     int sizeNeeded = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), static_cast<int>(wstr.size()), nullptr, 0, nullptr, nullptr);
@@ -60,6 +98,9 @@ static const wchar_t* GuessMimeType(const std::filesystem::path& filePath) {
     return L"application/octet-stream";
 }
 
+// ============================================================================
+// AppController Member Functions
+// ============================================================================
 AppController::AppController()
     : m_libraryModel(m_configModel, m_boxartService),
       m_emulatorModel(m_configModel),
@@ -113,24 +154,30 @@ bool AppController::Initialize(HINSTANCE hInstance, const std::filesystem::path&
     std::filesystem::path iconPath = appRootDir / "assets" / "snex9x.ico";
     std::string iconPathUtf8 = iconPath.u8string();
 
+    std::filesystem::path webviewCacheDir = appRootDir / "config" / "cache" / "webview2";
+    std::error_code ecCache;
+    std::filesystem::create_directories(webviewCacheDir, ecCache);
+    std::string webviewCacheUtf8 = webviewCacheDir.u8string();
+
     PhotinoInitParams initParams{};
     initParams.Size = sizeof(PhotinoInitParams);
-    initParams.Title = (AutoString)"Snex9x v2 - Super Nintendo Entertainment System";
-    initParams.StartUrl = (AutoString)L"snes://app/index.html";
+    initParams.Title = (AutoString)kAppTitle;
+    initParams.StartUrl = (AutoString)kStartUrl;
+    initParams.TemporaryFilesPath = (AutoString)webviewCacheUtf8.c_str();
     if (std::filesystem::exists(iconPath)) {
         initParams.WindowIconFile = (AutoString)iconPathUtf8.c_str();
     }
-    initParams.CustomSchemeNames[0] = (AutoString)"snes";
+    initParams.CustomSchemeNames[0] = (AutoString)kCustomSchemeName;
     initParams.CustomSchemeHandler = (WebResourceRequestedCallback*)&AppController::OnWebResourceRequested;
     initParams.WebMessageReceivedHandler = (WebMessageReceivedCallback*)&AppController::OnWebMessageReceived;
     initParams.FocusInHandler = (FocusInCallback*)&AppController::OnWindowFocusIn;
     initParams.FocusOutHandler = (FocusOutCallback*)&AppController::OnWindowFocusOut;
     initParams.ClosingHandler = (ClosingCallback*)&AppController::OnWindowClosing;
 
-    initParams.Width = 1360;
-    initParams.Height = 860;
-    initParams.MinWidth = 960;
-    initParams.MinHeight = 620;
+    initParams.Width = kDefaultWindowWidth;
+    initParams.Height = kDefaultWindowHeight;
+    initParams.MinWidth = kMinWindowWidth;
+    initParams.MinHeight = kMinWindowHeight;
     initParams.MaxWidth = INT_MAX;
     initParams.MaxHeight = INT_MAX;
     initParams.CenterOnInitialize = true;
@@ -164,7 +211,8 @@ void AppController::Run() {
 }
 
 void AppController::Shutdown() {
-    if (m_shuttingDown.exchange(true)) return;
+    if (m_isShutdown.exchange(true)) return;
+    m_shuttingDown = true;
     if (m_uiGamepadThread.joinable()) {
         m_uiGamepadThread.join();
     }
@@ -230,92 +278,98 @@ void AppController::ToggleFullscreen() {
 }
 
 void AppController::UiGamepadNavigationLoop() {
-    using clock = std::chrono::steady_clock;
-    auto lastRepeatTime = clock::now();
-    std::string activeHeldAction = "";
-    bool repeatStarted = false;
+    try {
+        using clock = std::chrono::steady_clock;
+        auto lastRepeatTime = clock::now();
+        std::string activeHeldAction = "";
+        bool repeatStarted = false;
 
-    bool prevSouth = false;
-    bool prevWest = false;
-    bool prevEast = false;
-    bool prevF11 = false;
+        bool prevSouth = false;
+        bool prevWest = false;
+        bool prevEast = false;
+        bool prevF11 = false;
 
-    while (!m_shuttingDown.load()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(16));
-        if (m_shuttingDown.load()) break;
+        while (!m_shuttingDown.load()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(kUiGamepadPollIntervalMs));
+            if (m_shuttingDown.load()) break;
 
-        // Global F11 key edge detection (works in both library and gameplay, even when WebView2 is unfocused)
-        if (m_windowFocused.load()) {
-            bool f11Pressed = (GetAsyncKeyState(VK_F11) & 0x8000) != 0;
-            if (f11Pressed && !prevF11) {
-                if (m_photino) {
-                    m_photino->Invoke(&AppController::ToggleFullscreenStatic);
+            // Global F11 key edge detection (works in both library and gameplay, even when WebView2 is unfocused)
+            if (m_windowFocused.load()) {
+                bool f11Pressed = (GetAsyncKeyState(VK_F11) & 0x8000) != 0;
+                if (f11Pressed && !prevF11) {
+                    if (m_photino) {
+                        m_photino->InvokeAsync(&AppController::ToggleFullscreenStatic);
+                    }
                 }
+                prevF11 = f11Pressed;
             }
-            prevF11 = f11Pressed;
-        }
 
-        // Library gamepad navigation is active only when emulation is NOT running and no modal dialog is open
-        if (m_emulatorModel.IsRunning() || m_modalOpen.load()) {
-            prevSouth = false;
-            prevWest = false;
-            prevEast = false;
-            activeHeldAction.clear();
-            continue;
-        }
+            // Library gamepad navigation is active only when emulation is NOT running and no modal dialog is open
+            if (m_emulatorModel.IsRunning() || m_modalOpen.load()) {
+                prevSouth = false;
+                prevWest = false;
+                prevEast = false;
+                activeHeldAction.clear();
+                continue;
+            }
 
-        auto nav = m_inputController.PollUiGamepadNavigationState();
-        auto now = clock::now();
+            auto nav = m_inputController.PollUiGamepadNavigationState();
+            auto now = clock::now();
 
-        // Directional navigation with initial delay (260ms) and repeat rate (70ms)
-        std::string currentDirection = "";
-        if (nav.down) currentDirection = "down";
-        else if (nav.up) currentDirection = "up";
-        else if (nav.pageDown) currentDirection = "pageDown";
-        else if (nav.pageUp) currentDirection = "pageUp";
+            // Directional navigation with initial delay and repeat rate
+            std::string currentDirection = "";
+            if (nav.down) currentDirection = "down";
+            else if (nav.up) currentDirection = "up";
+            else if (nav.pageDown) currentDirection = "pageDown";
+            else if (nav.pageUp) currentDirection = "pageUp";
 
-        if (!currentDirection.empty()) {
-            if (activeHeldAction != currentDirection) {
-                // Initial press
-                activeHeldAction = currentDirection;
-                repeatStarted = false;
-                lastRepeatTime = now;
-                SendIpcMessage({{"type", "navLibrary"}, {"action", currentDirection}});
+            if (!currentDirection.empty()) {
+                if (activeHeldAction != currentDirection) {
+                    // Initial press
+                    activeHeldAction = currentDirection;
+                    repeatStarted = false;
+                    lastRepeatTime = now;
+                    SendIpcMessage({{"type", "navLibrary"}, {"action", currentDirection}});
+                } else {
+                    auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastRepeatTime).count();
+                    if (!repeatStarted && elapsedMs >= kUiGamepadInitialDelayMs) {
+                        repeatStarted = true;
+                        lastRepeatTime = now;
+                        SendIpcMessage({{"type", "navLibrary"}, {"action", currentDirection}});
+                    } else if (repeatStarted && elapsedMs >= kUiGamepadRepeatRateMs) {
+                        lastRepeatTime = now;
+                        SendIpcMessage({{"type", "navLibrary"}, {"action", currentDirection}});
+                    }
+                }
             } else {
-                auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastRepeatTime).count();
-                if (!repeatStarted && elapsedMs >= 260) {
-                    repeatStarted = true;
-                    lastRepeatTime = now;
-                    SendIpcMessage({{"type", "navLibrary"}, {"action", currentDirection}});
-                } else if (repeatStarted && elapsedMs >= 70) {
-                    lastRepeatTime = now;
-                    SendIpcMessage({{"type", "navLibrary"}, {"action", currentDirection}});
+                activeHeldAction.clear();
+                repeatStarted = false;
+            }
+
+            // DualShock 4 X button (South) edge detection -> Launch selected game
+            if (nav.south && !prevSouth) {
+                SendIpcMessage({{"type", "navLibrary"}, {"action", "launch"}});
+            }
+            prevSouth = nav.south;
+
+            // DualShock 4 Square button (West) edge detection -> Toggle Fullscreen in Library view
+            if (nav.west && !prevWest) {
+                if (m_photino) {
+                    m_photino->InvokeAsync(&AppController::ToggleFullscreenStatic);
                 }
             }
-        } else {
-            activeHeldAction.clear();
-            repeatStarted = false;
-        }
+            prevWest = nav.west;
 
-        // DualShock 4 X button (South) edge detection -> Launch selected game
-        if (nav.south && !prevSouth) {
-            SendIpcMessage({{"type", "navLibrary"}, {"action", "launch"}});
-        }
-        prevSouth = nav.south;
-
-        // DualShock 4 Square button (West) edge detection -> Toggle Fullscreen in Library view
-        if (nav.west && !prevWest) {
-            if (m_photino) {
-                m_photino->Invoke(&AppController::ToggleFullscreenStatic);
+            // DualShock 4 Circle button (East) edge detection -> Close dialogs
+            if (nav.east && !prevEast) {
+                SendIpcMessage({{"type", "navLibrary"}, {"action", "back"}});
             }
+            prevEast = nav.east;
         }
-        prevWest = nav.west;
-
-        // DualShock 4 Circle button (East) edge detection -> Close dialogs
-        if (nav.east && !prevEast) {
-            SendIpcMessage({{"type", "navLibrary"}, {"action", "back"}});
-        }
-        prevEast = nav.east;
+    } catch (const std::exception& e) {
+        std::cerr << "[AppController] Exception in UiGamepadNavigationLoop: " << e.what() << "\n";
+    } catch (...) {
+        std::cerr << "[AppController] Unknown exception in UiGamepadNavigationLoop\n";
     }
 }
 
@@ -341,7 +395,7 @@ void AppController::SendIpcMessage(const json& payload) {
             std::lock_guard<std::mutex> lock(m_ipcMutex);
             m_pendingIpcQueue.push_back(std::move(serialized));
         }
-        m_photino->Invoke(&AppController::FlushPendingIpcStatic);
+        m_photino->InvokeAsync(&AppController::FlushPendingIpcStatic);
     }
 }
 
@@ -366,88 +420,95 @@ void* AppController::HandleCustomSchemeRequest(const std::wstring& uri, int* out
     *outNumBytes = 0;
     *outContentType = nullptr;
 
-    std::string uriUtf8 = WideToUtf8(uri);
-    // Strip query string if present
-    size_t queryPos = uriUtf8.find('?');
-    if (queryPos != std::string::npos) {
-        uriUtf8 = uriUtf8.substr(0, queryPos);
-    }
+    try {
+        std::string uriUtf8 = WideToUtf8(uri);
+        // Strip query string if present
+        size_t queryPos = uriUtf8.find('?');
+        if (queryPos != std::string::npos) {
+            uriUtf8 = uriUtf8.substr(0, queryPos);
+        }
 
-    // 1. Check if video frame fallback request: same-origin snes://app/api/frame or snes://frame/
-    if (uriUtf8.rfind("snes://app/api/frame", 0) == 0 || uriUtf8.rfind("snes://frame/", 0) == 0) {
-        std::vector<uint8_t> frameData;
-        m_emulatorModel.CopyLatestFrameBuffer(frameData);
-        if (frameData.empty()) return nullptr;
-        void* mem = CoTaskMemAlloc(frameData.size());
-        if (!mem) return nullptr;
-        std::memcpy(mem, frameData.data(), frameData.size());
-        *outNumBytes = static_cast<int>(frameData.size());
-        *outContentType = (AutoString)L"application/octet-stream";
-        return mem;
-    }
+        // 1. Check if video frame fallback request: same-origin snes://app/api/frame or snes://frame/
+        if (uriUtf8.rfind(kApiFrameSchemePrefix, 0) == 0 || uriUtf8.rfind(kFrameSchemePrefix, 0) == 0) {
+            std::vector<uint8_t> frameData;
+            m_emulatorModel.CopyLatestFrameBuffer(frameData);
+            if (frameData.empty()) return nullptr;
+            void* mem = CoTaskMemAlloc(frameData.size());
+            if (!mem) return nullptr;
+            std::memcpy(mem, frameData.data(), frameData.size());
+            *outNumBytes = static_cast<int>(frameData.size());
+            *outContentType = (AutoString)L"application/octet-stream";
+            return mem;
+        }
 
-    // 2. Check if boxart image request: snes://boxarts/<filename>
-    if (uriUtf8.rfind("snes://boxarts/", 0) == 0) {
-        std::string encodedName = uriUtf8.substr(std::strlen("snes://boxarts/"));
-        std::string decodedName = UrlDecodeUtf8(encodedName);
-        std::filesystem::path boxartPath = m_boxartService.GetCachedBoxartPath(decodedName);
-        std::error_code ec;
-        if (std::filesystem::exists(boxartPath, ec)) {
-            std::ifstream f(boxartPath, std::ios::binary | std::ios::ate);
-            if (f.is_open()) {
-                std::streamsize size = f.tellg();
-                if (size > 0) {
-                    f.seekg(0, std::ios::beg);
-                    void* mem = CoTaskMemAlloc(static_cast<size_t>(size));
-                    if (mem && f.read(reinterpret_cast<char*>(mem), size)) {
-                        *outNumBytes = static_cast<int>(size);
-                        *outContentType = (AutoString)L"image/png";
-                        return mem;
+        // 2. Check if boxart image request: snes://boxarts/<filename>
+        if (uriUtf8.rfind(kBoxartsSchemePrefix, 0) == 0) {
+            std::string encodedName = uriUtf8.substr(kBoxartsSchemePrefix.size());
+            std::string decodedName = UrlDecodeUtf8(encodedName);
+            std::filesystem::path boxartPath = m_boxartService.GetCachedBoxartPath(decodedName);
+            std::error_code ec;
+            if (std::filesystem::exists(boxartPath, ec)) {
+                std::ifstream f(boxartPath, std::ios::binary | std::ios::ate);
+                if (f.is_open()) {
+                    std::streamsize size = f.tellg();
+                    if (size > 0) {
+                        f.seekg(0, std::ios::beg);
+                        void* mem = CoTaskMemAlloc(static_cast<size_t>(size));
+                        if (mem && f.read(reinterpret_cast<char*>(mem), size)) {
+                            *outNumBytes = static_cast<int>(size);
+                            *outContentType = (AutoString)L"image/png";
+                            return mem;
+                        }
+                        if (mem) CoTaskMemFree(mem);
                     }
-                    if (mem) CoTaskMemFree(mem);
                 }
             }
+            return nullptr;
         }
-        return nullptr;
-    }
 
-    // 3. Default UI asset request: snes://app/<path>
-    const std::string appPrefix = "snes://app/";
-    std::string relPath = "index.html";
-    if (uriUtf8.rfind(appPrefix, 0) == 0) {
-        relPath = UrlDecodeUtf8(uriUtf8.substr(appPrefix.size()));
-        if (relPath.empty() || relPath == "/") {
-            relPath = "index.html";
+        // 3. Default UI asset request: snes://app/<path>
+        std::string relPath = "index.html";
+        if (uriUtf8.rfind(kAppSchemePrefix, 0) == 0) {
+            relPath = UrlDecodeUtf8(uriUtf8.substr(kAppSchemePrefix.size()));
+            if (relPath.empty() || relPath == "/") {
+                relPath = "index.html";
+            }
         }
-    }
 
-    // Prevent directory traversal
-    if (relPath.find("..") != std::string::npos) {
+        // Prevent directory traversal
+        if (relPath.find("..") != std::string::npos) {
+            return nullptr;
+        }
+
+        std::filesystem::path fullPath = m_configModel.GetUiDir() / std::filesystem::u8path(relPath);
+        std::error_code ec;
+        if (!std::filesystem::exists(fullPath, ec) || !std::filesystem::is_regular_file(fullPath, ec)) {
+            return nullptr;
+        }
+
+        std::ifstream file(fullPath, std::ios::binary | std::ios::ate);
+        if (!file.is_open()) return nullptr;
+        std::streamsize size = file.tellg();
+        if (size < 0) return nullptr;
+        file.seekg(0, std::ios::beg);
+
+        void* buffer = CoTaskMemAlloc(static_cast<size_t>(std::max<std::streamsize>(size, 1)));
+        if (!buffer) return nullptr;
+        if (size > 0 && !file.read(reinterpret_cast<char*>(buffer), size)) {
+            CoTaskMemFree(buffer);
+            return nullptr;
+        }
+
+        *outNumBytes = static_cast<int>(size);
+        *outContentType = (AutoString)GuessMimeType(fullPath);
+        return buffer;
+    } catch (const std::exception& e) {
+        std::cerr << "[AppController] Exception handling custom scheme: " << e.what() << "\n";
+        return nullptr;
+    } catch (...) {
+        std::cerr << "[AppController] Unknown exception handling custom scheme\n";
         return nullptr;
     }
-
-    std::filesystem::path fullPath = m_configModel.GetUiDir() / std::filesystem::u8path(relPath);
-    std::error_code ec;
-    if (!std::filesystem::exists(fullPath, ec) || !std::filesystem::is_regular_file(fullPath, ec)) {
-        return nullptr;
-    }
-
-    std::ifstream file(fullPath, std::ios::binary | std::ios::ate);
-    if (!file.is_open()) return nullptr;
-    std::streamsize size = file.tellg();
-    if (size < 0) return nullptr;
-    file.seekg(0, std::ios::beg);
-
-    void* buffer = CoTaskMemAlloc(static_cast<size_t>(std::max<std::streamsize>(size, 1)));
-    if (!buffer) return nullptr;
-    if (size > 0 && !file.read(reinterpret_cast<char*>(buffer), size)) {
-        CoTaskMemFree(buffer);
-        return nullptr;
-    }
-
-    *outNumBytes = static_cast<int>(size);
-    *outContentType = (AutoString)GuessMimeType(fullPath);
-    return buffer;
 }
 
 void AppController::HandleWebMessage(const std::string& jsonMessage) {
@@ -740,11 +801,7 @@ std::filesystem::path AppController::ShowOpenRomDialog() {
     IFileOpenDialog* pFileOpen = nullptr;
     HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
     if (SUCCEEDED(hr) && pFileOpen) {
-        COMDLG_FILTERSPEC rgSpec[] = {
-            { L"SNES ROM Images (*.sfc;*.smc;*.swc;*.fig;*.bs)", L"*.sfc;*.smc;*.swc;*.fig;*.bs" },
-            { L"All Files (*.*)", L"*.*" }
-        };
-        pFileOpen->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
+        pFileOpen->SetFileTypes(ARRAYSIZE(kRomFilterSpecs), kRomFilterSpecs);
         pFileOpen->SetTitle(L"Open Super Nintendo ROM");
         HWND owner = m_photino ? m_photino->getHwnd() : nullptr;
         if (SUCCEEDED(pFileOpen->Show(owner))) {
@@ -795,11 +852,7 @@ std::filesystem::path AppController::ShowSaveStateDialog() {
     IFileSaveDialog* pFileSave = nullptr;
     HRESULT hr = CoCreateInstance(CLSID_FileSaveDialog, nullptr, CLSCTX_ALL, IID_IFileSaveDialog, reinterpret_cast<void**>(&pFileSave));
     if (SUCCEEDED(hr) && pFileSave) {
-        COMDLG_FILTERSPEC rgSpec[] = {
-            { L"Snes9x Save State (*.frz;*.s01)", L"*.frz;*.s01" },
-            { L"All Files (*.*)", L"*.*" }
-        };
-        pFileSave->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
+        pFileSave->SetFileTypes(ARRAYSIZE(kSaveStateFilterSpecs), kSaveStateFilterSpecs);
         pFileSave->SetDefaultExtension(L"frz");
         pFileSave->SetTitle(L"Save Snes9x Emulation State");
         HWND owner = m_photino ? m_photino->getHwnd() : nullptr;
@@ -824,11 +877,7 @@ std::filesystem::path AppController::ShowLoadStateDialog() {
     IFileOpenDialog* pFileOpen = nullptr;
     HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
     if (SUCCEEDED(hr) && pFileOpen) {
-        COMDLG_FILTERSPEC rgSpec[] = {
-            { L"Snes9x Save State (*.frz;*.s01;*.s02;*.s03;*.s04;*.s05;*.s06;*.s07;*.s08;*.s09;*.s10)", L"*.frz;*.s01;*.s02;*.s03;*.s04;*.s05;*.s06;*.s07;*.s08;*.s09;*.s10" },
-            { L"All Files (*.*)", L"*.*" }
-        };
-        pFileOpen->SetFileTypes(ARRAYSIZE(rgSpec), rgSpec);
+        pFileOpen->SetFileTypes(ARRAYSIZE(kLoadStateFilterSpecs), kLoadStateFilterSpecs);
         pFileOpen->SetTitle(L"Load Snes9x Emulation State");
         HWND owner = m_photino ? m_photino->getHwnd() : nullptr;
         if (SUCCEEDED(pFileOpen->Show(owner))) {
@@ -848,4 +897,3 @@ std::filesystem::path AppController::ShowLoadStateDialog() {
 }
 
 } // namespace snex9x::controller
-
