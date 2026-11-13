@@ -63,7 +63,18 @@ void main() {
 }
 `;
 
+/**
+ * Hardware-accelerated WebGL2 SNES video frame presenter with CRT scanline/curvature shader
+ * and automatic Canvas2D software fallback.
+ */
 export class WebGLRenderer {
+  /**
+   * Stores canvas/stage references, sets default display settings, initializes graphics context,
+   * and subscribes to container resize updates.
+   * @param {HTMLCanvasElement} canvas
+   * @param {HTMLElement} stageEl
+   * @param {(fps: number, width: number, height: number) => void} [onMetricsUpdate]
+   */
   constructor(canvas, stageEl, onMetricsUpdate) {
     this.canvas = canvas;
     this.stageEl = stageEl;
@@ -104,6 +115,10 @@ export class WebGLRenderer {
     }
   }
 
+  /**
+   * Initializes the WebGL2 context, shader program, quad geometry, and RGBA video texture,
+   * falling back cleanly to Canvas2D on error or lack of WebGL2 support.
+   */
   _initContext() {
     try {
       const gl = this.canvas.getContext("webgl2", {
@@ -187,6 +202,12 @@ export class WebGLRenderer {
     }
   }
 
+  /**
+   * Compiles an individual GLSL ES 3.00 vertex or fragment shader stage.
+   * @param {number} type
+   * @param {string} source
+   * @returns {WebGLShader | null}
+   */
   _compileShader(type, source) {
     const gl = this.gl;
     const shader = gl.createShader(type);
@@ -200,11 +221,20 @@ export class WebGLRenderer {
     return shader;
   }
 
+  /**
+   * Binds the WebView2 shared memory framebuffer region and resets the frame counter.
+   * @param {ArrayBuffer} arrayBuffer
+   */
   attachSharedBuffer(arrayBuffer) {
     this.sharedBuffer = arrayBuffer;
     this.lastFrameCounter = 0;
   }
 
+  /**
+   * Applies graphics settings (aspect ratio, integer scaling, bilinear smoothing, CRT shader)
+   * and updates texture filtering and viewport geometry.
+   * @param {Record<string, any>} gfxSettings
+   */
   applySettings(gfxSettings) {
     if (!gfxSettings) return;
     this.settings = { ...this.settings, ...gfxSettings };
@@ -221,6 +251,10 @@ export class WebGLRenderer {
     this.updateViewportLayout();
   }
 
+  /**
+   * Calculates exact CSS display dimensions for #snes-canvas honoring stretch, 4:3, 8:7,
+   * and integer pixel scaling constraints within stageEl.
+   */
   updateViewportLayout() {
     if (!this.stageEl || !this.canvas) return;
     const rect = this.stageEl.getBoundingClientRect();
@@ -253,6 +287,9 @@ export class WebGLRenderer {
     }
   }
 
+  /**
+   * Starts the requestAnimationFrame presentation loop and refreshes viewport dimensions.
+   */
   start() {
     if (this.running) return;
     this.running = true;
@@ -265,10 +302,17 @@ export class WebGLRenderer {
     requestAnimationFrame(loop);
   }
 
+  /**
+   * Stops the active requestAnimationFrame presentation loop.
+   */
   stop() {
     this.running = false;
   }
 
+  /**
+   * Reads the latest frame from the attached shared buffer or falls back to relative
+   * HTTP polling of api/frame/latest.bin when shared memory is unavailable.
+   */
   _renderTick() {
     if (this.sharedBuffer && this.sharedBuffer.byteLength >= 16) {
       this._consumeFrameBuffer(this.sharedBuffer);
@@ -291,6 +335,11 @@ export class WebGLRenderer {
     }
   }
 
+  /**
+   * Validates the 16-byte frame header, resizes the GPU texture when PPU resolution changes,
+   * uploads RGBA pixels via WebGL2 or Canvas2D fallback, and emits FPS/dimension metrics.
+   * @param {ArrayBuffer} buffer
+   */
   _consumeFrameBuffer(buffer) {
     const header = new Uint32Array(buffer, 0, 4);
     const frameCounter = header[0];

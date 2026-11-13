@@ -33,6 +33,10 @@ static constexpr int kMinWindowHeight = 620;
 static constexpr int kUiGamepadPollIntervalMs = 16;
 static constexpr int kUiGamepadInitialDelayMs = 260;
 static constexpr int kUiGamepadRepeatRateMs = 70;
+static constexpr int kFullscreenToggleCooldownMs = 300;
+static constexpr int kButtonReleaseDebounceTicks = 3;
+
+static std::chrono::steady_clock::time_point s_lastFullscreenToggleTime{};
 
 static const COMDLG_FILTERSPEC kRomFilterSpecs[] = {
     { L"SNES ROM Images (*.sfc;*.smc;*.swc;*.fig;*.bs)", L"*.sfc;*.smc;*.swc;*.fig;*.bs" },
@@ -200,6 +204,9 @@ bool AppController::Initialize(HINSTANCE hInstance, const std::filesystem::path&
         if (hIconSmall) SendMessageW(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconSmall);
         if (hIconBig) SendMessageW(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIconBig);
     }
+    if (m_configModel.GetGraphicsSettings().fullscreen) {
+        m_photino->SetFullScreen(true);
+    }
     m_uiGamepadThread = std::thread(&AppController::UiGamepadNavigationLoop, this);
     return true;
 }
@@ -267,12 +274,24 @@ void AppController::ToggleFullscreenStatic() {
 }
 
 void AppController::ToggleFullscreen() {
+    auto now = std::chrono::steady_clock::now();
+    if (s_lastFullscreenToggleTime.time_since_epoch().count() > 0 &&
+        std::chrono::duration_cast<std::chrono::milliseconds>(now - s_lastFullscreenToggleTime).count() < kFullscreenToggleCooldownMs) {
+        return;
+    }
+    s_lastFullscreenToggleTime = now;
+
     auto gfx = m_configModel.GetGraphicsSettings();
-    gfx.fullscreen = !gfx.fullscreen;
+    bool currentFullscreen = gfx.fullscreen;
+    if (m_photino) {
+        m_photino->GetFullScreen(&currentFullscreen);
+    }
+    bool targetFullscreen = !currentFullscreen;
+    gfx.fullscreen = targetFullscreen;
     m_configModel.SetGraphicsSettings(gfx);
     m_configModel.SaveSettings();
     if (m_photino) {
-        m_photino->SetFullScreen(gfx.fullscreen);
+        m_photino->SetFullScreen(targetFullscreen);
     }
     BroadcastAppState();
 }
@@ -288,20 +307,37 @@ void AppController::UiGamepadNavigationLoop() {
         bool prevWest = false;
         bool prevEast = false;
         bool prevF11 = false;
+        int southReleaseTicks = 0;
+        int westReleaseTicks = 0;
+        int eastReleaseTicks = 0;
+        int f11ReleaseTicks = 0;
+
+        auto checkDebouncedRisingEdge = [](bool pressed, bool& prevPressed, int& releaseTicks) -> bool {
+            if (pressed) {
+                releaseTicks = 0;
+                if (!prevPressed) {
+                    prevPressed = true;
+                    return true;
+                }
+            } else if (prevPressed) {
+                if (++releaseTicks >= kButtonReleaseDebounceTicks) {
+                    prevPressed = false;
+                    releaseTicks = 0;
+                }
+            }
+            return false;
+        };
 
         while (!m_shuttingDown.load()) {
             std::this_thread::sleep_for(std::chrono::milliseconds(kUiGamepadPollIntervalMs));
             if (m_shuttingDown.load()) break;
 
             // Global F11 key edge detection (works in both library and gameplay, even when WebView2 is unfocused)
-            if (m_windowFocused.load()) {
-                bool f11Pressed = (GetAsyncKeyState(VK_F11) & 0x8000) != 0;
-                if (f11Pressed && !prevF11) {
-                    if (m_photino) {
-                        m_photino->InvokeAsync(&AppController::ToggleFullscreenStatic);
-                    }
+            bool f11Pressed = m_windowFocused.load() && ((GetAsyncKeyState(VK_F11) & 0x8000) != 0);
+            if (checkDebouncedRisingEdge(f11Pressed, prevF11, f11ReleaseTicks)) {
+                if (m_photino) {
+                    m_photino->InvokeAsync(&AppController::ToggleFullscreenStatic);
                 }
-                prevF11 = f11Pressed;
             }
 
             // Library gamepad navigation is active only when emulation is NOT running and no modal dialog is open
@@ -309,6 +345,9 @@ void AppController::UiGamepadNavigationLoop() {
                 prevSouth = false;
                 prevWest = false;
                 prevEast = false;
+                southReleaseTicks = 0;
+                westReleaseTicks = 0;
+                eastReleaseTicks = 0;
                 activeHeldAction.clear();
                 continue;
             }
@@ -347,24 +386,21 @@ void AppController::UiGamepadNavigationLoop() {
             }
 
             // DualShock 4 X button (South) edge detection -> Launch selected game
-            if (nav.south && !prevSouth) {
+            if (checkDebouncedRisingEdge(nav.south, prevSouth, southReleaseTicks)) {
                 SendIpcMessage({{"type", "navLibrary"}, {"action", "launch"}});
             }
-            prevSouth = nav.south;
 
             // DualShock 4 Square button (West) edge detection -> Toggle Fullscreen in Library view
-            if (nav.west && !prevWest) {
+            if (checkDebouncedRisingEdge(nav.west, prevWest, westReleaseTicks)) {
                 if (m_photino) {
                     m_photino->InvokeAsync(&AppController::ToggleFullscreenStatic);
                 }
             }
-            prevWest = nav.west;
 
             // DualShock 4 Circle button (East) edge detection -> Close dialogs
-            if (nav.east && !prevEast) {
+            if (checkDebouncedRisingEdge(nav.east, prevEast, eastReleaseTicks)) {
                 SendIpcMessage({{"type", "navLibrary"}, {"action", "back"}});
             }
-            prevEast = nav.east;
         }
     } catch (const std::exception& e) {
         std::cerr << "[AppController] Exception in UiGamepadNavigationLoop: " << e.what() << "\n";
@@ -756,7 +792,7 @@ void AppController::HandleWebMessage(const std::string& jsonMessage) {
         else if (action == "refreshDevices") {
             SendIpcMessage({
                 {"type", "devicesUpdated"},
-                {"devices", m_inputController.GetConnectedDevicesJson()}
+                {"devices", m_inputController.GetConnectedDevicesJson(true)}
             });
         }
         else if (action == "pollGamepadBinding") {

@@ -1,0 +1,87 @@
+/* ==========================================================================
+   ACTIVE EMULATION VIEWPORT (WebGL2 Canvas & Overlays)
+   ========================================================================== */
+@layer components {
+  .emulator-viewport {
+    width: 100%;
+    height: 100%;
+    background: #100c10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .emulator-viewport[hidden] {
+    display: none !important;
+  }
+
+  .canvas-stage {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  #snes-canvas {
+    background: #000000;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.9);
+    image-rendering: pixelated;
+  }
+
+  .fps-overlay {
+    position: absolute;
+    top: 14px;
+    right: 18px;
+    padding: 5px 12px;
+    border-radius: var(--radius-sm);
+    background: rgba(33, 26, 33, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: #86efac;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+  }
+
+  .hud-sep {
+    color: var(--text-muted);
+  }
+
+  .paused-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(24, 19, 24, 0.78);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .paused-overlay[hidden] {
+    display: none !important;
+  }
+
+  .paused-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 28px 36px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75);
+  }
+
+  .paused-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    justify-content: center;
+  }
+}

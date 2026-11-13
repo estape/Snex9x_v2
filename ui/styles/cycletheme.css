@@ -1,0 +1,111 @@
+/* ==========================================================================
+   SNEX9X V2 — THEME SYNCHRONIZATION & LIGHT/DARK CYCLING
+   ========================================================================== */
+@layer theme {
+  :root {
+    color-scheme: light dark;
+    --resolved-theme: light;
+
+    &:has(> head > meta[name="color-scheme"][content="dark"]) {
+      color-scheme: dark;
+      --resolved-theme: dark;
+    }
+
+    &:has(> head > meta[name="color-scheme"][content="light"]) {
+      color-scheme: light;
+      --resolved-theme: light;
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not(:has(> head > meta[name="color-scheme"][content="light"])) {
+      --resolved-theme: dark;
+    }
+  }
+
+  /* Legacy Browser Fallback When light-dark() Is Unsupported */
+  @supports not (color: light-dark(white, black)) {
+    :root {
+      --bg-deep: var(--snes-gray-light);
+      --bg-surface: #dcd7da;
+      --bg-elevated: #ebe8ea;
+      --bg-inset: #bdb7bc;
+      --bg-card: rgba(235, 232, 234, 0.92);
+      --text-primary: var(--snes-charcoal);
+      --text-strong: #151015;
+      --text-secondary: #43389b;
+      --text-muted: #524b59;
+      --scrollbar-thumb: #76707f;
+      --scrollbar-track: #dcd7da;
+    }
+
+    @container style(--resolved-theme: dark) {
+      .app-shell {
+        --bg-deep: var(--snes-charcoal);
+        --bg-surface: #282029;
+        --bg-elevated: #312733;
+        --bg-inset: #191319;
+        --bg-card: rgba(49, 39, 51, 0.86);
+        --text-primary: var(--snes-gray-light);
+        --text-strong: #ffffff;
+        --text-secondary: var(--snes-lavender);
+        --text-muted: #a6a0af;
+        --scrollbar-thumb: var(--snes-gray-mid);
+        --scrollbar-track: var(--snes-charcoal);
+      }
+    }
+  }
+
+  /* Compact Theme Toggle (Driven by :root --resolved-theme Container Query) */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .theme-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    min-height: 28px;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+    background: var(--pill-bg);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background 0.14s ease, border-color 0.14s ease;
+  }
+
+  .theme-toggle-btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-strong);
+  }
+
+  .theme-option-dark {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .theme-option-light {
+    display: none;
+    align-items: center;
+  }
+
+  @container style(--resolved-theme: dark) {
+    .theme-option-dark {
+      display: none;
+    }
+
+    .theme-option-light {
+      display: inline-flex;
+    }
+  }
+}
