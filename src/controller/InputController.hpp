@@ -54,8 +54,8 @@ public:
     UiGamepadNavState PollUiGamepadNavigationState();
 
     // Returns list of available devices ("none", "keyboard", and all connected SDL3 gamepads)
-    std::vector<ConnectedDeviceInfo> GetConnectedDevices();
-    nlohmann::json GetConnectedDevicesJson();
+    std::vector<ConnectedDeviceInfo> GetConnectedDevices(bool forceRefresh = false);
+    nlohmann::json GetConnectedDevicesJson(bool forceRefresh = false);
 
     // Updates WebView keyboard state (fallback/complement to Win32 GetAsyncKeyState)
     void SetWebKeyState(const std::string& code, bool pressed);

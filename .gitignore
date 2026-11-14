@@ -36,6 +36,7 @@ build/
 bin/
 obj/
 out/
+dist/
 
 # Visual Studio files
 .vs/

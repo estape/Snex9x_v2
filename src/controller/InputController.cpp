@@ -125,9 +125,11 @@ void InputController::RefreshGamepads() {
     }
 }
 
-std::vector<ConnectedDeviceInfo> InputController::GetConnectedDevices() {
+std::vector<ConnectedDeviceInfo> InputController::GetConnectedDevices(bool forceRefresh) {
     std::lock_guard<std::mutex> lock(m_mutex);
-    RefreshGamepads();
+    if (forceRefresh || m_openGamepads.empty()) {
+        RefreshGamepads();
+    }
 
     std::vector<ConnectedDeviceInfo> list;
     ConnectedDeviceInfo kb;
@@ -151,8 +153,8 @@ std::vector<ConnectedDeviceInfo> InputController::GetConnectedDevices() {
     return list;
 }
 
-json InputController::GetConnectedDevicesJson() {
-    auto devices = GetConnectedDevices();
+json InputController::GetConnectedDevicesJson(bool forceRefresh) {
+    auto devices = GetConnectedDevices(forceRefresh);
     json arr = json::array();
     for (const auto& d : devices) {
         arr.push_back({
